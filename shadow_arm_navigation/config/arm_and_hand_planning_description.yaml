@@ -1,0 +1,1252 @@
+multi_dof_joints:
+  - name: world_joint
+    type: Floating
+    parent_frame_id: world
+    child_frame_id: world
+groups:
+  - name: shadow_right_arm
+    base_link: shadowarm_base
+    tip_link: palm
+default_collision_operations:
+  - object1: world
+    object2: desk_support
+    operation: disable  # Adjacent in collision
+  - object1: desk_support
+    object2: desk_pillar
+    operation: disable  # Adjacent in collision
+  - object1: desk_pillar
+    object2: shadowarm_base
+    operation: disable  # Adjacent in collision
+  - object1: shadowarm_base
+    object2: shadowarm_trunk
+    operation: disable  # Adjacent in collision
+  - object1: shadowarm_trunk
+    object2: shadowarm_upperarm
+    operation: disable  # Adjacent in collision
+  - object1: shadowarm_upperarm
+    object2: shadowarm_lowerarm
+    operation: disable  # Adjacent in collision
+  - object1: shadowarm_lowerarm
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Adjacent in collision
+  - object1: shadowarm_handsupport_motor
+    object2: forearm_motor
+    operation: disable  # Adjacent in collision
+  - object1: forearm_motor
+    object2: wrist
+    operation: disable  # Adjacent in collision
+  - object1: wrist
+    object2: palm
+    operation: disable  # Adjacent in collision
+  - object1: palm
+    object2: ffknuckle
+    operation: disable  # Adjacent in collision
+  - object1: ffknuckle
+    object2: ffproximal
+    operation: disable  # Adjacent in collision
+  - object1: ffproximal
+    object2: ffmiddle
+    operation: disable  # Adjacent in collision
+  - object1: ffmiddle
+    object2: ffdistal
+    operation: disable  # Adjacent in collision
+  - object1: palm
+    object2: lfmetacarpal
+    operation: disable  # Adjacent in collision
+  - object1: lfmetacarpal
+    object2: lfknuckle
+    operation: disable  # Adjacent in collision
+  - object1: lfknuckle
+    object2: lfproximal
+    operation: disable  # Adjacent in collision
+  - object1: lfproximal
+    object2: lfmiddle
+    operation: disable  # Adjacent in collision
+  - object1: lfmiddle
+    object2: lfdistal
+    operation: disable  # Adjacent in collision
+  - object1: palm
+    object2: mfknuckle
+    operation: disable  # Adjacent in collision
+  - object1: mfknuckle
+    object2: mfproximal
+    operation: disable  # Adjacent in collision
+  - object1: mfproximal
+    object2: mfmiddle
+    operation: disable  # Adjacent in collision
+  - object1: mfmiddle
+    object2: mfdistal
+    operation: disable  # Adjacent in collision
+  - object1: palm
+    object2: rfknuckle
+    operation: disable  # Adjacent in collision
+  - object1: rfknuckle
+    object2: rfproximal
+    operation: disable  # Adjacent in collision
+  - object1: rfproximal
+    object2: rfmiddle
+    operation: disable  # Adjacent in collision
+  - object1: rfmiddle
+    object2: rfdistal
+    operation: disable  # Adjacent in collision
+  - object1: palm
+    object2: thbase
+    operation: disable  # Adjacent in collision
+  - object1: thbase
+    object2: thproximal
+    operation: disable  # Adjacent in collision
+  - object1: thproximal
+    object2: thhub
+    operation: disable  # Adjacent in collision
+  - object1: thhub
+    object2: thmiddle
+    operation: disable  # Adjacent in collision
+  - object1: thmiddle
+    object2: thdistal
+    operation: disable  # Adjacent in collision
+  - object1: desk_pillar
+    object2: thproximal
+    operation: disable  # Default in collision
+  - object1: forearm_motor
+    object2: shadowarm_lowerarm
+    operation: disable  # Often in collision
+  - object1: desk_pillar
+    object2: forearm_motor
+    operation: disable  # Never in collision
+  - object1: desk_pillar
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: desk_pillar
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: desk_pillar
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: desk_pillar
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: desk_pillar
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: ffdistal
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: ffknuckle
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: ffmiddle
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: ffproximal
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: forearm_motor
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: lfdistal
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: lfknuckle
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: lfmetacarpal
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: lfmiddle
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: lfproximal
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: mfdistal
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: mfmiddle
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: mfproximal
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: rfdistal
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: rfmiddle
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: thdistal
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: desk_support
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: ffknuckle
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: ffproximal
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: forearm_motor
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: lfknuckle
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: lfmetacarpal
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: lfmiddle
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: lfproximal
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: ffdistal
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: ffmiddle
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: forearm_motor
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: lfdistal
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: lfknuckle
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: lfmetacarpal
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: lfmiddle
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: lfproximal
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: mfdistal
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: mfmiddle
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: mfproximal
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: rfdistal
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: rfmiddle
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: ffknuckle
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: forearm_motor
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: lfdistal
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: lfknuckle
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: lfmetacarpal
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: lfmiddle
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: lfproximal
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: ffmiddle
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: forearm_motor
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: lfdistal
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: lfknuckle
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: lfmetacarpal
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: lfmiddle
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: lfproximal
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: mfmiddle
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: rfdistal
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: rfmiddle
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: ffproximal
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: lfdistal
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: lfknuckle
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: lfmetacarpal
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: lfmiddle
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: lfproximal
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: mfdistal
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: mfmiddle
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: mfproximal
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: rfdistal
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: rfmiddle
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: thdistal
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: forearm_motor
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: lfknuckle
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: lfmetacarpal
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: lfproximal
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: mfproximal
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: lfdistal
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: lfmiddle
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: mfdistal
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: mfmiddle
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: mfproximal
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: rfmiddle
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: thdistal
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: lfknuckle
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: lfmiddle
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: lfproximal
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: mfdistal
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: mfmiddle
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: mfproximal
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: rfdistal
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: rfmiddle
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: thdistal
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: lfmetacarpal
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: lfmiddle
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: mfmiddle
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: mfproximal
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: lfproximal
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: mfknuckle
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: mfproximal
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: mfdistal
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: mfmiddle
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: rfdistal
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: rfmiddle
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: mfknuckle
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: mfmiddle
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: palm
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: mfproximal
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: rfdistal
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: rfmiddle
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: thdistal
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: palm
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: rfdistal
+    object2: rfknuckle
+    operation: disable  # Never in collision
+  - object1: rfdistal
+    object2: rfproximal
+    operation: disable  # Never in collision
+  - object1: rfdistal
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: rfdistal
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: rfdistal
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: rfdistal
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: rfdistal
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: rfdistal
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: rfdistal
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: rfdistal
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: rfdistal
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: rfknuckle
+    object2: rfmiddle
+    operation: disable  # Never in collision
+  - object1: rfknuckle
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: rfknuckle
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: rfknuckle
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: rfknuckle
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: rfknuckle
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: rfknuckle
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: rfknuckle
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: rfknuckle
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: rfknuckle
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: rfknuckle
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: rfmiddle
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: rfmiddle
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: rfmiddle
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: rfmiddle
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: rfmiddle
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: rfmiddle
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: rfmiddle
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: rfmiddle
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: rfmiddle
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: rfmiddle
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: rfproximal
+    object2: shadowarm_base
+    operation: disable  # Never in collision
+  - object1: rfproximal
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: rfproximal
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: rfproximal
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: rfproximal
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: rfproximal
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: rfproximal
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: rfproximal
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: rfproximal
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: rfproximal
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: shadowarm_base
+    object2: shadowarm_handsupport_motor
+    operation: disable  # Never in collision
+  - object1: shadowarm_base
+    object2: shadowarm_lowerarm
+    operation: disable  # Never in collision
+  - object1: shadowarm_base
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: shadowarm_base
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: shadowarm_base
+    object2: thdistal
+    operation: disable  # Never in collision
+  - object1: shadowarm_base
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: shadowarm_base
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: shadowarm_base
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: shadowarm_base
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: shadowarm_handsupport_motor
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: shadowarm_handsupport_motor
+    object2: shadowarm_upperarm
+    operation: disable  # Never in collision
+  - object1: shadowarm_handsupport_motor
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: shadowarm_handsupport_motor
+    object2: thdistal
+    operation: disable  # Never in collision
+  - object1: shadowarm_handsupport_motor
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: shadowarm_handsupport_motor
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: shadowarm_handsupport_motor
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: shadowarm_handsupport_motor
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: shadowarm_lowerarm
+    object2: shadowarm_trunk
+    operation: disable  # Never in collision
+  - object1: shadowarm_lowerarm
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: shadowarm_lowerarm
+    object2: thdistal
+    operation: disable  # Never in collision
+  - object1: shadowarm_lowerarm
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: shadowarm_lowerarm
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: shadowarm_lowerarm
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: shadowarm_lowerarm
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: shadowarm_trunk
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: shadowarm_trunk
+    object2: thdistal
+    operation: disable  # Never in collision
+  - object1: shadowarm_trunk
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: shadowarm_trunk
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: shadowarm_trunk
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: shadowarm_trunk
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: shadowarm_upperarm
+    object2: thbase
+    operation: disable  # Never in collision
+  - object1: shadowarm_upperarm
+    object2: thdistal
+    operation: disable  # Never in collision
+  - object1: shadowarm_upperarm
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: shadowarm_upperarm
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: shadowarm_upperarm
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: shadowarm_upperarm
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: thbase
+    object2: thdistal
+    operation: disable  # Never in collision
+  - object1: thbase
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: thbase
+    object2: thmiddle
+    operation: disable  # Never in collision
+  - object1: thbase
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: thdistal
+    object2: thhub
+    operation: disable  # Never in collision
+  - object1: thdistal
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: thdistal
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: thhub
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: thmiddle
+    object2: thproximal
+    operation: disable  # Never in collision
+  - object1: thmiddle
+    object2: wrist
+    operation: disable  # Never in collision
+  - object1: thproximal
+    object2: wrist
+    operation: disable  # Never in collision
