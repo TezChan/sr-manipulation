@@ -1,4 +1,4 @@
 <launch>
     <param name="robot_description" textfile="$(find sr_hand)/model/robots/arm_and_hand_motor.urdf" />
-    <rosparam command="load" ns="robot_description_planning" file="$(find arm_and_hand_arm_navigation)/config/arm_and_hand_planning_description.yaml" />
+    <rosparam command="load" ns="robot_description_planning" file="$(find shadow_arm_navigation)/config/arm_and_hand_planning_description.yaml" />
 </launch>
