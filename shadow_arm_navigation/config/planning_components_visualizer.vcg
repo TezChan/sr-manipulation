@@ -25,27 +25,27 @@ Interactive\ Markers.Show\ Tool\ Tips=1
 Interactive\ Markers.Update\ Topic=/planning_visualizer_controls/update
 PCV\ Markers.Enabled=1
 PCV\ Markers.Marker\ Topic=/planning_components_visualizer
-Robot\ Model.Alpha=1
-Robot\ Model.Collision\ Enabled=0
-Robot\ Model.Enabled=1
-Robot\ Model.Robot\ Description=arm_description
-Robot\ Model.TF\ Prefix=/sr_arm/position
-Robot\ Model.Update\ Interval=0
-Robot\ Model.Visual\ Enabled=1
-Robot\:\ Robot\ Model\ Link\ desk_pillarShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ desk_pillarShow\ Trail=0
-Robot\:\ Robot\ Model\ Link\ desk_supportShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ desk_supportShow\ Trail=0
-Robot\:\ Robot\ Model\ Link\ shadowarm_baseShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ shadowarm_baseShow\ Trail=0
-Robot\:\ Robot\ Model\ Link\ shadowarm_handsupport_motorShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ shadowarm_handsupport_motorShow\ Trail=0
-Robot\:\ Robot\ Model\ Link\ shadowarm_lowerarmShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ shadowarm_lowerarmShow\ Trail=0
-Robot\:\ Robot\ Model\ Link\ shadowarm_trunkShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ shadowarm_trunkShow\ Trail=0
-Robot\:\ Robot\ Model\ Link\ shadowarm_upperarmShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ shadowarm_upperarmShow\ Trail=0
+Shadow\ Arm.Alpha=1
+Shadow\ Arm.Collision\ Enabled=0
+Shadow\ Arm.Enabled=1
+Shadow\ Arm.Robot\ Description=arm_description
+Shadow\ Arm.TF\ Prefix=/sr_arm/position
+Shadow\ Arm.Update\ Interval=0
+Shadow\ Arm.Visual\ Enabled=1
+Robot\:\ Shadow\ Arm\ Link\ desk_pillarShow\ Axes=0
+Robot\:\ Shadow\ Arm\ Link\ desk_pillarShow\ Trail=0
+Robot\:\ Shadow\ Arm\ Link\ desk_supportShow\ Axes=0
+Robot\:\ Shadow\ Arm\ Link\ desk_supportShow\ Trail=0
+Robot\:\ Shadow\ Arm\ Link\ shadowarm_baseShow\ Axes=0
+Robot\:\ Shadow\ Arm\ Link\ shadowarm_baseShow\ Trail=0
+Robot\:\ Shadow\ Arm\ Link\ shadowarm_handsupport_motorShow\ Axes=0
+Robot\:\ Shadow\ Arm\ Link\ shadowarm_handsupport_motorShow\ Trail=0
+Robot\:\ Shadow\ Arm\ Link\ shadowarm_lowerarmShow\ Axes=0
+Robot\:\ Shadow\ Arm\ Link\ shadowarm_lowerarmShow\ Trail=0
+Robot\:\ Shadow\ Arm\ Link\ shadowarm_trunkShow\ Axes=0
+Robot\:\ Shadow\ Arm\ Link\ shadowarm_trunkShow\ Trail=0
+Robot\:\ Shadow\ Arm\ Link\ shadowarm_upperarmShow\ Axes=0
+Robot\:\ Shadow\ Arm\ Link\ shadowarm_upperarmShow\ Trail=0
 Robot\:\ Shadow\ Hand\ Link\ ffdistalShow\ Axes=0
 Robot\:\ Shadow\ Hand\ Link\ ffdistalShow\ Trail=0
 Robot\:\ Shadow\ Hand\ Link\ ffknuckleShow\ Axes=0
@@ -107,24 +107,24 @@ Tool\ 2D\ Nav\ GoalTopic=goal
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 Camera\ Type=rviz::OrbitViewController
 Camera\ Config=1.07279 5.38579 3.71244 -0.175765 0.481736 -0.0678036
-Property\ Grid\ State=selection=Shadow Hand.Enabled.Shadow Hand.TF Prefix;expanded=.Global Options,Robot Model.Enabled,PCV Markers.Enabled.PCV Markers.Namespaces,Shadow Hand.Enabled;scrollpos=0,0;splitterpos=261,523;ispageselected=1
+Property\ Grid\ State=selection=Shadow Hand.Enabled.Shadow Hand.TF Prefix;expanded=.Global Options,Shadow Arm.Enabled,PCV Markers.Enabled.PCV Markers.Namespaces,Shadow Hand.Enabled;scrollpos=0,0;splitterpos=261,523;ispageselected=1
 [Display0]
 Name=Grid
 Package=rviz
 ClassName=rviz::GridDisplay
 [Display1]
-Name=Robot Model
+Name=Shadow Arm
 Package=rviz
 ClassName=rviz::RobotModelDisplay
 [Display2]
-Name=PCV Markers
-Package=rviz
-ClassName=rviz::MarkerDisplay
-[Display3]
-Name=Interactive Markers
-Package=rviz
-ClassName=rviz::InteractiveMarkerDisplay
-[Display4]
 Name=Shadow Hand
 Package=rviz
 ClassName=rviz::RobotModelDisplay
+[Display3]
+Name=PCV Markers
+Package=rviz
+ClassName=rviz::MarkerDisplay
+[Display4]
+Name=Interactive Markers
+Package=rviz
+ClassName=rviz::InteractiveMarkerDisplay
