@@ -3,5 +3,6 @@
     <node pkg="ompl_ros_interface" type="ompl_ros" name="ompl_planning">
         <param name="default_planner_config" type="string" value="SBLkConfig1" />
         <rosparam command="load" file="$(find shadow_arm_navigation)/config/ompl_planning.yaml" />
+	<remap from="joint_states" to="/gazebo/joint_states" />
     </node>
 </launch>
