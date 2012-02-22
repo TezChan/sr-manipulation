@@ -1,6 +1,15 @@
 <launch>
     <include file="$(find shadow_arm_navigation)/launch/arm_and_hand_planning_environment.launch" />
-    <include file="$(find planning_environment)/launch/planning_environment_visualization_prerequisites.launch" />
+
+    <!-- planning_environment_visualization_prerequisites.launch starts a node
+    publishing wallclock time as /clock but we want gazebo time, so just start
+    the enviroment server -->
+    <!-- <include file="$(find planning_environment)/launch/planning_environment_visualization_prerequisites.launch" /> -->
+      <include file="$(find planning_environment)/launch/environment_server.launch" >
+        <arg name="use_monitor" value="false"/>
+        <arg name="use_collision_map" value="false"/>
+      </include>
+
     <include file="$(find shadow_arm_navigation)/launch/constraint_aware_kinematics.launch" />
     <include file="$(find shadow_arm_navigation)/launch/ompl_planning.launch" />
     <include file="$(find shadow_arm_navigation)/launch/trajectory_filter_server.launch" />
