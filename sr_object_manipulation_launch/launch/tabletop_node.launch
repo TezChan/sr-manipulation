@@ -32,7 +32,7 @@
 	type="tabletop_object_recognition" respawn="false" output="screen">
     <!--operational parameters-->
     <param name="perform_fit_merge" value="true" />
-    <param name="fit_merge_threshold" value="0.05" />
+    <param name="fit_merge_threshold" value="0.001" />
     <param name="min_marker_quality" value="0.003" />
 
     <!--topic remapping-->

@@ -62,8 +62,6 @@ self_see_links:
     padding: .02
   - name: wrist
     padding: .02
-  - name: /base_link
-    padding: .02
 
 
 
