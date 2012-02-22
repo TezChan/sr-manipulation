@@ -11,12 +11,6 @@
     <remap from="~ik_start_angles" to="/right_arm_ik_start_angles"/>
   </node>
 
-  <node name="cluster_bounding_box_finder" pkg="object_manipulator"
-	type="cluster_bounding_box_finder_server.py"
-	output="screen"
-	respawn="false">
-  </node>
-
   <node name="sr_grasp_planner" pkg="sr_grasp_planner" type="sr_grasp_planner" respawn="false"/>
 
   <node name="object_manipulator" pkg="object_manipulator" type="object_manipulator_node"
