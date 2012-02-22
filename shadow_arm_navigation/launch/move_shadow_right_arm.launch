@@ -2,7 +2,7 @@
     <node pkg="move_arm" type="move_arm_simple_action" name="arm_and_hand_move_shadow_right_arm">
         <param name="group" type="string" value="shadow_right_arm" />
         <remap from="arm_ik" to="arm_and_hand_shadow_right_arm_kinematics/get_constraint_aware_ik" />
-        <param name="controller_action_name" type="string" value="shadow_right_arm_controller/follow_joint_trajectory" />
+        <param name="controller_action_name" type="string" value="r_arm_controller/joint_trajectory_action" />
 	<remap from="joint_states" to="/gazebo/joint_states" />
     </node>
 </launch>
