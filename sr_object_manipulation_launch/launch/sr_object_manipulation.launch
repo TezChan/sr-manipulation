@@ -1,4 +1,8 @@
 <launch>
+  <group if="$(optenv SIMULATED 0)">
+    <include file="$(find sr_hand)/launch/can.launch"/>
+  </group>
+
   <!-- specifies the machines on which the nodes will be run -->
   <include file="$(find sr_object_manipulation_launch)/machines/threedsensor.machine"/>
   <include file="$(find sr_object_manipulation_launch)/machines/dataprocessing.machine"/>
