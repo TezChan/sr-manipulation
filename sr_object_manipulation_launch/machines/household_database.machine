@@ -1,3 +1,3 @@
 <launch>
-  <machine name="household_database" address="ugo-work" ros-root="/opt/ros/electric/ros" ros-package-path="/opt/ros/electric"  default="true" user="ugo"/>
+  <machine name="household_database" address="localhost" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true" user="toni"/>
 </launch>

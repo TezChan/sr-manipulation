@@ -1,4 +1,8 @@
 <launch>
+  <group if="$(optenv SIMULATED 0)">
+    <include file="$(find sr_hand)/launch/can.launch"/>
+  </group>
+
   <!-- specifies the machines on which the nodes will be run -->
   <include file="$(find sr_object_manipulation_launch)/machines/threedsensor.machine"/>
   <include file="$(find sr_object_manipulation_launch)/machines/dataprocessing.machine"/>
@@ -9,8 +13,10 @@
   <include file="$(find sr_object_manipulation_launch)/launch/filters.launch"/>
 
   <!-- <include file="$(find openni_launch)/launch/openni.launch"/>-->
-  <!-- Sets the position of the kinect in comparison to the robot -->
-  <include file="$(find sr_object_manipulation_launch)/launch/static_transform.launch"/>
+  <group unless="$(optenv SIMULATED 0)">
+    <!-- Sets the position of the kinect in comparison to the robot -->
+    <include file="$(find sr_object_manipulation_launch)/launch/static_transform.launch"/>
+  </group>
 
   <!-- start the object detection and recognition -->
   <include file="$(find sr_object_manipulation_launch)/launch/household_object.launch"/>
@@ -26,5 +32,5 @@
   <include file="$(find sr_object_manipulation_launch)/launch/collision_map.launch"/>
 
   <!-- start the manipulator related nodes -->
-<!--  <include file="$(find sr_object_manipulation_launch)/launch/manipulator.launch"/> -->
+  <include file="$(find sr_object_manipulation_launch)/launch/manipulator.launch"/>
 </launch>

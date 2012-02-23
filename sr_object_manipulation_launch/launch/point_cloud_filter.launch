@@ -29,15 +29,15 @@
       <remap from="~input" to="psy/output" />
       <rosparam>
         filter_field_name: z
-        filter_limit_min: -1.
-        filter_limit_max: 1.0
+        filter_limit_min: 0.0
+        filter_limit_max: 1.1
       </rosparam>
     </node>
 
     <!-- removes the outliers -->
     <node pkg="nodelet" type="nodelet" name="rm_outliers" args="load pcl/StatisticalOutlierRemoval box_filter_pcl_manager" output="screen">
       <remap from="~input" to="psz/output" />
-      <remap from="~output" to="fully_filtered" />
+      <remap from="~output" to="box_filtered" />
       <rosparam>
         mean_k: 50
         stddev: 1.0

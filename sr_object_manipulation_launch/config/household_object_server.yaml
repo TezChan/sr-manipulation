@@ -1,5 +1,5 @@
 household_objects_database:
-  database_host: ugo-work
+  database_host: horus
   database_port: 5432
   database_user: willow
   database_pass: willow
