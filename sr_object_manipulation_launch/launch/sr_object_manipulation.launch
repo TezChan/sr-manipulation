@@ -13,8 +13,10 @@
   <include file="$(find sr_object_manipulation_launch)/launch/filters.launch"/>
 
   <!-- <include file="$(find openni_launch)/launch/openni.launch"/>-->
-  <!-- Sets the position of the kinect in comparison to the robot -->
-  <include file="$(find sr_object_manipulation_launch)/launch/static_transform.launch"/>
+  <group unless="$(optenv SIMULATED 0)">
+    <!-- Sets the position of the kinect in comparison to the robot -->
+    <include file="$(find sr_object_manipulation_launch)/launch/static_transform.launch"/>
+  </group>
 
   <!-- start the object detection and recognition -->
   <include file="$(find sr_object_manipulation_launch)/launch/household_object.launch"/>
