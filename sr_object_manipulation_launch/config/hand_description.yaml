@@ -1,4 +1,4 @@
-shadow_hand_description:
+hand_description:
   right_arm:
     hand_frame: palm
     robot_frame: /base_link

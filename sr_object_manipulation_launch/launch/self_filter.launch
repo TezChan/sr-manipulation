@@ -1,28 +1,21 @@
 <launch>
-
+<!--
   <node pkg="robot_self_filter" type="self_filter" name="kinect_self_filter"
-	respawn="false" output="screen">
+  	respawn="false" output="screen">
     <remap from="robot_description" to="robot_description"/>
 
-    <!-- The topic for the input cloud -->
-    <remap from="cloud_in" to="/pcl_filters/fully_filtered" />
-    <!-- The topic for the output cloud -->
-    <remap from="cloud_out" to="/camera/depth/points_filtered" />
+    <remap from="cloud_in" to="/pcl_filters/box_filtered" />
+    <remap from="cloud_out" to="/pcl_filters/robot_filtered" />
 
-    <!-- The frame of the sensor used to obtain the data to be filtered; This
-	 parameter is optional. If it is not specified, shadow points will be
-	 considered outside
-    -->
-    <param name="sensor_frame" type="string" value="camera_link" />
+    <param name="sensor_frame" type="string" value="/camera_link" />
     <param name="subsample_value" type="double" value=".02"/>
 
-    <!-- The names of the links the sensor can see -->
     <rosparam command="load" file="$(find sr_object_manipulation_launch)/config/self_filter.yaml"/>
   </node>
-
+-->
   <!-- need to clear known objects from scans -->
   <node pkg="planning_environment" type="filter_attached_objects" name="filter_attached_objects_stereo" output="screen">
-    <remap from="cloud_in" to="/pcl_filters/fully_filtered" />
+    <remap from="cloud_in" to="/pcl_filters/box_filtered" />
     <remap from="cloud_out" to="/full_cloud_filtered" />
     <param name="sensor_frame" type="string" value="/camera_link" />
   </node>
