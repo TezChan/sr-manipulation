@@ -1,3 +1,4 @@
+*.swp
 sr_object_manipulation_launch/bin
 sr_object_manipulation_launch/build
 sr_object_manipulation_smach/bin
