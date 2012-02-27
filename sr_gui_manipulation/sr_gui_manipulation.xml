@@ -1,0 +1,13 @@
+<library path="lib/SrGuiManipulation">
+  <class name="SrGuiManipulation" type="SrGuiManipulation" base_class_type="rosgui_rospy::Plugin">
+    <description>
+	A Shadow Robot plugin for manipulation, detecting objects and starting grabs.
+    </description>
+    <rosguiplugin>
+      <label>Shadow Manipulation</label>
+      <icon type="theme">input-gaming</icon>
+      <statustip>A Shadow Robot plugin for manipulation, detecting objects and starting grabs.</statustip>
+    </rosguiplugin>
+  </class>
+</library>
+
