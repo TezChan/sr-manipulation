@@ -29,6 +29,11 @@ from tabletop_object_detector.srv import TabletopDetection
 from tabletop_collision_map_processing.srv import TabletopCollisionMapProcessing
 from household_objects_database_msgs.srv import GetModelDescription
 import object_manipulator.draw_functions as draw_functions
+from object_manipulation_msgs.srv import FindClusterBoundingBox, FindClusterBoundingBoxRequest
+from object_manipulation_msgs.msg import PickupGoal, PickupAction, PlaceGoal, PlaceAction
+from object_manipulator.convert_functions import *
+import actionlib
+from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray 
 from tf import transformations
 import tf
 
@@ -112,6 +117,11 @@ class ObjectChooser(QtGui.QWidget):
             self.place_object(graspable_object, self.object.graspable_object_name, object_name, list_of_poses)
 
     def pickup(self, graspable_object, graspable_object_name, object_name):
+        """
+        Try to pick up the given object. Sends a message (PickupGoal from
+        actionlib_msgs) to the manipularior action server on
+        /object_manipulator/object_manipulator_pickup/goal
+        """
         info_tmp = "Picking up "+ object_name
         rospy.loginfo(info_tmp)
         pickup_goal = PickupGoal()
@@ -151,6 +161,8 @@ class ObjectChooser(QtGui.QWidget):
 
         if pickup_client.get_state() != GoalStatus.SUCCEEDED:
             rospy.logerr("The pickup action has failed: " + str(self.pickup_result.manipulation_result.value) )
+            QMessageBox.warning(self, "Warning",
+                    "Pickup action failed: "+str(self.pickup_result.manipulation_result.value))
             return -1
 
         return 0

@@ -5,7 +5,7 @@
 
   </description>
   <author>Mark Pitchless</author>
-  <license>BSD</license>
+  <license>GPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/sr_gui_manipulation</url>
   <depend package="rospy"/>
