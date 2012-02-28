@@ -23,7 +23,7 @@ from rospy import loginfo, logerr, logdebug
 from rosgui.QtBindingHelper import loadUi
 import QtGui
 from QtCore import QEvent, QObject, Qt, QTimer, Slot, QThread, SIGNAL, QPoint, SIGNAL
-from QtGui import QDockWidget, QWidget, QShortcut, QMessageBox, QFrame, QHBoxLayout, QCheckBox, QLabel, QCursor, QColor, QMessageBox
+from QtGui import * 
 
 from tabletop_object_detector.srv import TabletopDetection
 from tabletop_collision_map_processing.srv import TabletopCollisionMapProcessing
@@ -37,24 +37,25 @@ from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray
 from tf import transformations
 import tf
 
-class ObjectChooser(QtGui.QWidget):
+class ObjectChooser(QWidget):
     """
-    Display the list of found objects
+    Display the list of found objects in a table. Make PickUp calls to
+    manipulator action server on selected objects.
     """
-    def __init__(self, parent, plugin_parent, title):
-        QtGui.QWidget.__init__(self)
-        self.plugin_parent = plugin_parent
+    def __init__(self, parent, gui, title):
+        QWidget.__init__(self)
+        self.gui   = gui
         self.grasp = None
-        self.title = QtGui.QLabel()
+        self.title = QLabel()
         self.title.setText(title)
-        self.draw_functions = None
-        self.pickup_result = None
-        self.listener = tf.TransformListener()
+        self.draw_functions = draw_functions.DrawFunctions('grasp_markers')
+        self.pickup_result  = None
+        self.listener       = tf.TransformListener()
 
     def draw(self):
-        self.frame = QtGui.QFrame(self)
+        self.frame = QFrame(self)
 
-        self.tree = QtGui.QTreeWidget()
+        self.tree = QTreeWidget()
         self.connect(self.tree,
                      SIGNAL('itemDoubleClicked (QTreeWidgetItem *, int)'),
                      self.double_click)
@@ -63,14 +64,12 @@ class ObjectChooser(QtGui.QWidget):
         self.tree.resizeColumnToContents(1)
         self.tree.resizeColumnToContents(2)
 
-        self.layout = QtGui.QVBoxLayout()
+        self.layout = QVBoxLayout()
         self.layout.addWidget(self.title)
         self.layout.addWidget(self.tree)
 
-        self.draw_functions = draw_functions.DrawFunctions('grasp_markers')
-
         self.frame.setLayout(self.layout)
-        layout = QtGui.QVBoxLayout()
+        layout = QVBoxLayout()
         layout.addWidget(self.frame)
         self.frame.show()
         self.setLayout(layout)
@@ -78,7 +77,7 @@ class ObjectChooser(QtGui.QWidget):
 
     def double_click(self, item, value):
         object_name = str(item.text(0))
-        self.object = self.plugin_parent.found_objects[object_name]
+        self.object = self.gui.found_objects[object_name]
 
         graspable_object = self.object.graspable_object
 
@@ -127,7 +126,7 @@ class ObjectChooser(QtGui.QWidget):
         pickup_goal = PickupGoal()
         pickup_goal.target = graspable_object
         pickup_goal.collision_object_name = graspable_object_name
-        pickup_goal.collision_support_surface_name = self.plugin_parent.collision_support_surface_name
+        pickup_goal.collision_support_surface_name = self.gui.collision_support_surface_name
 
         pickup_goal.arm_name = "right_arm"
         #pickup_goal.desired_approach_distance = 0.05
@@ -152,11 +151,9 @@ class ObjectChooser(QtGui.QWidget):
         rospy.loginfo("Pickup server ready")
 
         pickup_client.send_goal(pickup_goal)
-        #timeout after 1sec
         #TODO: change this when using the robot
         pickup_client.wait_for_result(timeout=rospy.Duration.from_sec(90.0))
-        rospy.loginfo("Got Pickup results")
-
+        loginfo("Got Pickup results")
         self.pickup_result = pickup_client.get_result()
 
         if pickup_client.get_state() != GoalStatus.SUCCEEDED:
@@ -169,7 +166,7 @@ class ObjectChooser(QtGui.QWidget):
 
     def place_object(self, graspable_object, graspable_object_name, object_name, list_of_poses ):
         """
-        place the given object in the given pose
+        Place the given object in the given pose
         """
         if self.pickup_result == None:
             rospy.logwarn("No objects where picked up. Aborting place object action.")
@@ -177,17 +174,14 @@ class ObjectChooser(QtGui.QWidget):
 
         info_tmp = "Placing "+object_name
         rospy.loginfo(info_tmp)
-
         place_goal = PlaceGoal()
 
         #place at the prepared location
-
-
         place_goal.place_locations = list_of_poses
 
         place_goal.collision_object_name = graspable_object_name
-        place_goal.collision_support_surface_name = self.plugin_parent.collision_support_surface_name
-        print "collision support surface name: ",self.plugin_parent.collision_support_surface_name
+        place_goal.collision_support_surface_name = self.gui.collision_support_surface_name
+        print "collision support surface name: ",self.gui.collision_support_surface_name
 
         #information about which grasp was executed on the object,
         #returned by the pickup action
@@ -309,19 +303,18 @@ class ObjectChooser(QtGui.QWidget):
         else:
             return (None, None)
 
-
     def refresh_list(self, value=0):
         self.tree.clear()
         first_item = None
-        object_names = self.plugin_parent.found_objects.keys()
+        object_names = self.gui.found_objects.keys()
         object_names.sort()
         for object_name in object_names:
-            item = QtGui.QTreeWidgetItem(self.tree)
+            item = QTreeWidgetItem(self.tree)
             if first_item == None:
                 first_item = item
 
             item.setText(0, object_name)
-            obj = self.plugin_parent.found_objects[object_name].model_description
+            obj = self.gui.found_objects[object_name].model_description
             if "unknown_" not in object_name:
                 item.setText(1, obj.maker)
 
@@ -333,21 +326,18 @@ class ObjectChooser(QtGui.QWidget):
             self.tree.resizeColumnToContents(0)
             self.tree.resizeColumnToContents(1)
             self.tree.resizeColumnToContents(2)
-
-            #print "add"
-            #self.tree.addTopLevelItem(item)
         return first_item
 
 
 class TableObject(object):
     """
     Contains all the relevant info for an object.
-    A map of TableObject is stored in the ObjectSelection plugin.
+    A map of TableObject is stored in SrGuiManipulation.
     """
     def __init__(self):
-        self.graspable_object = None
+        self.graspable_object      = None
         self.graspable_object_name = None
-        self.model_description = None
+        self.model_description     = None
 
 
 class Model(object):
@@ -475,7 +465,7 @@ class SrGuiManipulation(QObject):
 
     def get_object_name(self, model_id):
         """
-        return the object name given its index (read from database, or
+        Return the object name given it's index (read from database, or
         create unique name if unknown object).
         """
         model = Model()
