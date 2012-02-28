@@ -14,6 +14,7 @@
   <depend package="rostopic"/>
   <depend package="std_msgs"/>
   <depend package="std_srvs"/>
+  <depend package="tabletop_collision_map_processing"/>
 
   <export>
     <rosgui plugin="${prefix}/sr_gui_manipulation.xml"/>
