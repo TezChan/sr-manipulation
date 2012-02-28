@@ -1,8 +1,8 @@
 <launch>
-    <include file="$(find shadow_arm_navigation)/launch/arm_and_hand_planning_environment.launch" />
+    <include file="$(find shadow_arm_navigation)/launch/shadow_planning_environment.launch" />
     <node pkg="ompl_ros_interface" type="ompl_ros" name="ompl_planning">
         <param name="default_planner_config" type="string" value="SBLkConfig1" />
         <rosparam command="load" file="$(find shadow_arm_navigation)/config/ompl_planning.yaml" />
-	<remap from="joint_states" to="/gazebo/joint_states" />
+	<remap from="joint_states" to="/gazebo/joint_states"/>
     </node>
 </launch>
