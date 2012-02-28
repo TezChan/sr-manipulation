@@ -32,6 +32,7 @@ import object_manipulator.draw_functions as draw_functions
 from object_manipulation_msgs.srv import FindClusterBoundingBox, FindClusterBoundingBoxRequest
 from object_manipulation_msgs.msg import PickupGoal, PickupAction, PlaceGoal, PlaceAction
 from object_manipulator.convert_functions import *
+from geometry_msgs.msg import Vector3Stamped, PoseStamped, Pose
 import actionlib
 from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray 
 from tf import transformations
