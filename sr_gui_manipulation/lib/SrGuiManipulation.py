@@ -445,6 +445,7 @@ class SrGuiManipulation(QObject):
 
     def detect_objects(self):
         self.found_objects.clear()
+        self.win.contents.setCursor(Qt.WaitCursor)
         try:
             self.raw_objects = self.service_object_detector(True, True, 1)
         except rospy.ServiceException, e:
@@ -473,6 +474,7 @@ class SrGuiManipulation(QObject):
            self.win.btn_collision_map.setEnabled(True)
         # TODO: Should really do this with SIGNALs and SLOTs.
         self.object_chooser.refresh_list()
+        self.win.contents.setCursor(Qt.ArrowCursor)
 
     def process_collision_map(self):
         res = 0
