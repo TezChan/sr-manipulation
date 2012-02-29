@@ -389,7 +389,11 @@ class SrGuiManipulation(QObject):
         self.win.btn_collision_map.setEnabled(False)
         self.win.btn_reset_arm_position.pressed.connect(self.reset_arm_position)
 
-        # Service setup
+        self.init_services()
+        self.init_joint_pubs()
+
+    def init_services(self):
+        """Service setup"""
         srvname = '/tabletop_collision_map_processing/tabletop_collision_map_processing'
         rospy.wait_for_service(srvname)
         self.service_tabletop_collision_map = rospy.ServiceProxy(srvname, TabletopCollisionMapProcessing)
@@ -401,8 +405,6 @@ class SrGuiManipulation(QObject):
         srvname = 'objects_database_node/get_model_description'
         rospy.wait_for_service(srvname)
         self.service_db_get_model_description = rospy.ServiceProxy(srvname, GetModelDescription)
-
-        self.init_joint_pubs()
 
     def init_joint_pubs(self):
         """Setup publishers for the arm and hand joints"""
@@ -423,10 +425,6 @@ class SrGuiManipulation(QObject):
             topic = 'sa_'+j+'_position_controller/command'
             self.joint_pub[j] = rospy.Publisher(topic, Float64)
       
-    def hello(self):
-        """Say hello, useful for quick test of buttons"""
-        loginfo("hello")
-
     def eventFilter(self, obj, event):
         if obj is self.win and event.type() == QEvent.Close:
             # TODO: ignore() should not be necessary when returning True
@@ -485,8 +483,10 @@ class SrGuiManipulation(QObject):
             logerr("Service did not process request: %s" % str(e))
 
         if res != 0:
-            loginfo("collision_support_surface_name: "+res.collision_support_surface_name)
-            self.collision_support_surface_name = res.collision_support_surface_name
+            name = res.collision_support_surface_name
+            loginfo("collision_support_surface_name: "+name)
+            self.collision_support_surface_name = name
+            self.win.collision_support_surface_name.setText(name)
         return res
 
     def get_object_name(self, model_id):
