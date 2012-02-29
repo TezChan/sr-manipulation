@@ -15,10 +15,12 @@
 
 from __future__ import division
 import os
+import math
 
 import roslib; roslib.load_manifest('sr_gui_manipulation')
 import rospy
 from rospy import loginfo, logerr, logdebug
+from std_msgs.msg import Float64
 
 from rosgui.QtBindingHelper import loadUi
 import QtGui
@@ -385,8 +387,13 @@ class SrGuiManipulation(QObject):
         self.win.btn_detect_objects.pressed.connect(self.detect_objects)
         self.win.btn_collision_map.pressed.connect(self.process_collision_map)
         self.win.btn_collision_map.setEnabled(False)
+        self.win.btn_reset_arm_position.pressed.connect(self.reset_arm_position)
 
-        # Service setup
+        self.init_services()
+        self.init_joint_pubs()
+
+    def init_services(self):
+        """Service setup"""
         srvname = '/tabletop_collision_map_processing/tabletop_collision_map_processing'
         rospy.wait_for_service(srvname)
         self.service_tabletop_collision_map = rospy.ServiceProxy(srvname, TabletopCollisionMapProcessing)
@@ -399,10 +406,25 @@ class SrGuiManipulation(QObject):
         rospy.wait_for_service(srvname)
         self.service_db_get_model_description = rospy.ServiceProxy(srvname, GetModelDescription)
 
-    def hello(self):
-        """Say hello, useful for quick test of buttons"""
-        loginfo("hello")
-
+    def init_joint_pubs(self):
+        """Setup publishers for the arm and hand joints"""
+        self.joint_pub = {};
+        # Hand joints
+        for j in [
+            "ffj0", "ffj3", "ffj4",
+            "lfj0", "lfj3", "lfj4", "lfj5",
+            "mfj0", "mfj3", "mfj4",
+            "rfj0", "rfj3", "rfj4",
+            "thj1", "thj2", "thj3", "thj4", "thj5",
+            "wrj1", "wrj2"
+            ]:
+            topic = 'sh_'+j+'_mixed_position_velocity_controller/command'
+            self.joint_pub[j] = rospy.Publisher(topic, Float64)
+        # Arm joints
+        for j in ["er", "es", "sr", "ss"]:
+            topic = 'sa_'+j+'_position_controller/command'
+            self.joint_pub[j] = rospy.Publisher(topic, Float64)
+      
     def eventFilter(self, obj, event):
         if obj is self.win and event.type() == QEvent.Close:
             # TODO: ignore() should not be necessary when returning True
@@ -423,6 +445,7 @@ class SrGuiManipulation(QObject):
 
     def detect_objects(self):
         self.found_objects.clear()
+        self.win.contents.setCursor(Qt.WaitCursor)
         try:
             self.raw_objects = self.service_object_detector(True, True, 1)
         except rospy.ServiceException, e:
@@ -449,7 +472,9 @@ class SrGuiManipulation(QObject):
 
         if self.raw_objects != None:
            self.win.btn_collision_map.setEnabled(True)
+        # TODO: Should really do this with SIGNALs and SLOTs.
         self.object_chooser.refresh_list()
+        self.win.contents.setCursor(Qt.ArrowCursor)
 
     def process_collision_map(self):
         res = 0
@@ -460,8 +485,10 @@ class SrGuiManipulation(QObject):
             logerr("Service did not process request: %s" % str(e))
 
         if res != 0:
-            loginfo("collision_support_surface_name: "+res.collision_support_surface_name)
-            self.collision_support_surface_name = res.collision_support_surface_name
+            name = res.collision_support_surface_name
+            loginfo("collision_support_surface_name: "+name)
+            self.collision_support_surface_name = name
+            self.win.collision_support_surface_name.setText(name)
         return res
 
     def get_object_name(self, model_id):
@@ -482,3 +509,11 @@ class SrGuiManipulation(QObject):
                 model.name = "unkown_recognition_failed"
         return model
 
+    def reset_arm_position(self):
+        """Move the arm into a good satrting position to start the grab"""
+        self.joint_pub['er'].publish(Float64(math.radians(45)))
+        self.joint_pub['es'].publish(Float64(math.radians(75)))
+        self.joint_pub['sr'].publish(Float64(math.radians(16)))
+        self.joint_pub['ss'].publish(Float64(math.radians(15)))
+        self.joint_pub['wrj1'].publish(Float64(math.radians(-18)))
+        self.joint_pub['wrj2'].publish(Float64(math.radians(-6)))
