@@ -519,6 +519,14 @@ class SrGuiManipulation(QObject):
         """Move the arm through a named series of positions defined in YAML config.
         Loads config on each call so that GUI will pickup changes to the config file.
         """
+        # TODO - Use action server r_arm_controller/joint_trajectory_action
+        # can then run non-blocking and be cancellable, preemtable.
+        # FollowJointTrajectoryGoal needs a fixed list of joint names,
+        # specified for all steps, so will need to:
+        # * Scan list of moves to get all joint names.
+        # * Any joints not specified in fist step need to get positions read
+        # * Remember last position for each joint while generating points so we
+        #   can fill them in  when not given in YAML step.
         yaml_file = os.path.join(self.config_dir, 'positions.yaml')
         try:
             data = yaml.load(open(yaml_file))
