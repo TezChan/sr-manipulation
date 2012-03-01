@@ -25,7 +25,7 @@ from std_msgs.msg import Float64
 from rosgui.QtBindingHelper import loadUi
 import QtGui
 from QtCore import QEvent, QObject, Qt, QTimer, Slot, QThread, SIGNAL, QPoint, SIGNAL
-from QtGui import * 
+from QtGui import *
 
 from tabletop_object_detector.srv import TabletopDetection
 from tabletop_collision_map_processing.srv import TabletopCollisionMapProcessing
@@ -36,9 +36,11 @@ from object_manipulation_msgs.msg import PickupGoal, PickupAction, PlaceGoal, Pl
 from object_manipulator.convert_functions import *
 from geometry_msgs.msg import Vector3Stamped, PoseStamped, Pose
 import actionlib
-from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray 
+from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray
 from tf import transformations
 import tf
+
+import yaml
 
 class ObjectChooser(QWidget):
     """
@@ -159,6 +161,7 @@ class ObjectChooser(QWidget):
         loginfo("Got Pickup results")
         self.pickup_result = pickup_client.get_result()
 
+        #print "HELLO: "+str(self.pickup_result)
         if pickup_client.get_state() != GoalStatus.SUCCEEDED:
             rospy.logerr("The pickup action has failed: " + str(self.pickup_result.manipulation_result.value) )
             QMessageBox.warning(self, "Warning",
@@ -363,10 +366,12 @@ class SrGuiManipulation(QObject):
         self.service_db_get_model_description = None
         self.service_object_detector          = None
 
+        self_dir        = os.path.dirname(os.path.realpath(__file__));
+        self.config_dir = os.path.join(self_dir, '../config')
+        self.ui_dir     = os.path.join(self_dir, '../ui')
+
         # UI setup
-        ui_file = os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                '../ui/SrGuiManipulation.ui')
+        ui_file = os.path.join(self.ui_dir, 'SrGuiManipulation.ui')
 
         main_window = plugin_context.main_window()
         self.win = QDockWidget(main_window)
@@ -387,7 +392,8 @@ class SrGuiManipulation(QObject):
         self.win.btn_detect_objects.pressed.connect(self.detect_objects)
         self.win.btn_collision_map.pressed.connect(self.process_collision_map)
         self.win.btn_collision_map.setEnabled(False)
-        self.win.btn_reset_arm_position.pressed.connect(self.reset_arm_position)
+        self.win.btn_start_grab_position.pressed.connect(self.start_grab_position)
+        self.win.btn_zero_position.pressed.connect(self.zero_position)
 
         self.init_services()
         self.init_joint_pubs()
@@ -424,7 +430,7 @@ class SrGuiManipulation(QObject):
         for j in ["er", "es", "sr", "ss"]:
             topic = 'sa_'+j+'_position_controller/command'
             self.joint_pub[j] = rospy.Publisher(topic, Float64)
-      
+
     def eventFilter(self, obj, event):
         if obj is self.win and event.type() == QEvent.Close:
             # TODO: ignore() should not be necessary when returning True
@@ -509,11 +515,26 @@ class SrGuiManipulation(QObject):
                 model.name = "unkown_recognition_failed"
         return model
 
-    def reset_arm_position(self):
-        """Move the arm into a good satrting position to start the grab"""
-        self.joint_pub['er'].publish(Float64(math.radians(45)))
-        self.joint_pub['es'].publish(Float64(math.radians(75)))
-        self.joint_pub['sr'].publish(Float64(math.radians(16)))
-        self.joint_pub['ss'].publish(Float64(math.radians(15)))
-        self.joint_pub['wrj1'].publish(Float64(math.radians(-18)))
-        self.joint_pub['wrj2'].publish(Float64(math.radians(-6)))
+    def position_arm(self, pos_name):
+        """Move the arm through a named series of positions defined in YAML config.
+        Loads config on each call so that GUI will pickup changes to the config file.
+        """
+        # TODO
+        # * Error handling in file load
+        # * Busy cursor but be careful with errors, don't lock the cursor busy!
+        yaml_file = open(os.path.join(self.config_dir, 'positions.yaml'))
+        data = yaml.load(yaml_file)
+        traj = data[pos_name]
+        for step in traj:
+            rospy.sleep(step['wait'])
+            print(str(step['wait'])+": "+str(step['positions']))
+            for jname, pos_degs in step['positions'].iteritems():
+                pos_rads = math.radians(pos_degs);
+                self.joint_pub[jname].publish(Float64(pos_rads))
+
+    def zero_position(self):
+        self.position_arm('zero')
+
+    def start_grab_position(self):
+        """Move the arm into a good starting position for the grab"""
+        self.position_arm('start_grab')
