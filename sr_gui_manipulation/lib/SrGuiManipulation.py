@@ -519,18 +519,26 @@ class SrGuiManipulation(QObject):
         """Move the arm through a named series of positions defined in YAML config.
         Loads config on each call so that GUI will pickup changes to the config file.
         """
-        # TODO
-        # * Error handling in file load
-        # * Busy cursor but be careful with errors, don't lock the cursor busy!
-        yaml_file = open(os.path.join(self.config_dir, 'positions.yaml'))
-        data = yaml.load(yaml_file)
-        traj = data[pos_name]
-        for step in traj:
-            rospy.sleep(step['wait'])
-            print(str(step['wait'])+": "+str(step['positions']))
-            for jname, pos_degs in step['positions'].iteritems():
-                pos_rads = math.radians(pos_degs);
-                self.joint_pub[jname].publish(Float64(pos_rads))
+        yaml_file = os.path.join(self.config_dir, 'positions.yaml')
+        try:
+            data = yaml.load(open(yaml_file))
+        except IOError as err:
+            QMessageBox.warning(self.win, "Warning",
+                    "Failed to load '"+yaml_file+"': "+str(err))
+        
+        self.win.contents.setCursor(Qt.WaitCursor)
+        try:
+            traj = data[pos_name]
+            for step in traj:
+                rospy.sleep(step['wait'])
+                print(str(step['wait'])+": "+str(step['positions']))
+                for jname, pos_degs in step['positions'].iteritems():
+                    pos_rads = math.radians(pos_degs);
+                    self.joint_pub[jname].publish(Float64(pos_rads))
+        except:
+            self.win.contents.setCursor(Qt.ArrowCursor)
+            raise
+        self.win.contents.setCursor(Qt.ArrowCursor)
 
     def zero_position(self):
         self.position_arm('zero')
