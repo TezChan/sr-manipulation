@@ -16,6 +16,10 @@
   <depend package="std_srvs"/>
   <depend package="tabletop_collision_map_processing"/>
   <depend package="object_manipulator"/>
+  <depend package="sr_robot_lib"/>
+  <depend package="sr_hand"/>
+  <depend package="actionlib"/>
+  <depend package="control_msgs"/>
 
   <export>
     <rosgui plugin="${prefix}/sr_gui_manipulation.xml"/>

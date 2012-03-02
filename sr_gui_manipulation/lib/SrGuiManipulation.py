@@ -21,6 +21,8 @@ import roslib; roslib.load_manifest('sr_gui_manipulation')
 import rospy
 from rospy import loginfo, logerr, logdebug
 from std_msgs.msg import Float64
+from etherCAT_hand_lib import EtherCAT_Hand_Lib
+from shadowhand_ros import ShadowHand_ROS
 
 from rosgui.QtBindingHelper import loadUi
 import QtGui
@@ -37,6 +39,8 @@ from object_manipulator.convert_functions import *
 from geometry_msgs.msg import Vector3Stamped, PoseStamped, Pose
 import actionlib
 from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray
+import control_msgs.msg
+import trajectory_msgs.msg
 from tf import transformations
 import tf
 
@@ -395,6 +399,13 @@ class SrGuiManipulation(QObject):
         self.win.btn_start_grab_position.pressed.connect(self.start_grab_position)
         self.win.btn_zero_position.pressed.connect(self.zero_position)
 
+        self.robot_lib_eth = EtherCAT_Hand_Lib()
+        if not self.robot_lib_eth.activate_joint_states():
+            logerr("The EtherCAT Hand node doesn't seem to be running")
+        self.robot_lib_can = ShadowHand_ROS() 
+        if not self.robot_lib_can.has_arm():
+            logerr("The CAN Arm node doesn't seem to be running")
+
         self.init_services()
         self.init_joint_pubs()
 
@@ -519,38 +530,106 @@ class SrGuiManipulation(QObject):
         """Move the arm through a named series of positions defined in YAML config.
         Loads config on each call so that GUI will pickup changes to the config file.
         """
-        # TODO - Use action server r_arm_controller/joint_trajectory_action
-        # can then run non-blocking and be cancellable, preemtable.
-        # FollowJointTrajectoryGoal needs a fixed list of joint names,
-        # specified for all steps, so will need to:
-        # * Scan list of moves to get all joint names.
-        # * Any joints not specified in fist step need to get positions read
-        # * Remember last position for each joint while generating points so we
-        #   can fill them in  when not given in YAML step.
         yaml_file = os.path.join(self.config_dir, 'positions.yaml')
         try:
             data = yaml.load(open(yaml_file))
         except IOError as err:
             QMessageBox.warning(self.win, "Warning",
                     "Failed to load '"+yaml_file+"': "+str(err))
-        
+            return
+
         self.win.contents.setCursor(Qt.WaitCursor)
         try:
-            traj = data[pos_name]
-            for step in traj:
-                rospy.sleep(step['wait'])
-                print(str(step['wait'])+": "+str(step['positions']))
-                for jname, pos_degs in step['positions'].iteritems():
-                    pos_rads = math.radians(pos_degs);
-                    self.joint_pub[jname].publish(Float64(pos_rads))
+            self._position_arm_actionlib(data[pos_name])
+            #self._position_arm_direct(data[pos_name])
         except:
             self.win.contents.setCursor(Qt.ArrowCursor)
             raise
         self.win.contents.setCursor(Qt.ArrowCursor)
 
+    def _position_arm_actionlib(self, moves): 
+        # Use action server r_arm_controller/joint_trajectory_action
+        # FollowJointTrajectoryGoal needs a fixed list of joint names,
+        # specified for all steps
+        traj = { 'joint_names': [], 'points': [] }
+        # Scan list of moves to get all joint names.
+        jnames_map = {}
+        for step in moves:
+            for k in step['positions'].keys():
+                jnames_map[k] = 1
+        jnames = jnames_map.keys()
+        traj['joint_names'] = jnames
+        # Any joints not specified in fist step need to get positions read
+        # Remember last position for each joint while generating points so we
+        # can fill them in  when not given in YAML step.
+        joint_last_pos = {}
+        for jn in jnames:
+            if jn in moves[0]['positions']:
+                joint_last_pos[jn] = math.radians(moves[0]['positions'][jn])
+            else:
+                joint_last_pos[jn] = self.current_joint_pos(jn) 
+        # Fill out the full trajectory
+        time_from_start = 0
+        for step in moves:
+            positions = []
+            time_from_start += step['wait']
+            point = {
+                'time_from_start': rospy.Duration(time_from_start),
+                'positions':       positions }
+            traj['points'].append(point)
+            for jn in jnames:
+                if jn in step['positions']:
+                    pos = math.radians(step['positions'][jn])
+                    positions.append(pos)
+                    joint_last_pos[jn] = pos
+                else:
+                    positions.append( joint_last_pos[jn] )
+        print "Converted trajectory:", traj
+        
+        # Create and send goal
+        client = actionlib.SimpleActionClient(
+                "r_arm_controller/joint_trajectory_action",
+                control_msgs.msg.FollowJointTrajectoryAction)
+        client.wait_for_server()
+        goal = control_msgs.msg.FollowJointTrajectoryGoal()
+        goal.trajectory.joint_names = traj['joint_names']
+        for pt in traj['points']:
+            pt_msg = trajectory_msgs.msg.JointTrajectoryPoint()
+            pt_msg.positions = pt['positions']
+            pt_msg.time_from_start = pt['time_from_start']
+            goal.trajectory.points.append(pt_msg)
+        client.send_goal(goal)
+        # No need to actually wait, can let action server run, allows us to
+        # preempt with another motion or cancel
+        #client.wait_for_result()
+        
+    def current_joint_pos(self, jname):
+        """Return current position of a joint name (hand or arm) in radians"""
+        arm_name_map = {
+            'sr': "ShoulderJRotate",
+            'ss': "ShoulderJSwing",
+            'es': "ElbowJSwing",
+            'er': "ElbowJRotate" }
+        if jname in ["er", "es", "sr", "ss"]: # Arm joints
+            return math.radians( self.robot_lib_can.valueof(arm_name_map[jname]) )
+        else: 
+            # TODO - Double check this returns in radians.
+            return self.robot_lib_eth.get_position(jname.upper())
+
+    def _position_arm_direct(self, traj):
+        for step in traj:
+            rospy.sleep(step['wait'])
+            print(str(step['wait'])+": "+str(step['positions']))
+            for jname, pos_degs in step['positions'].iteritems():
+                pos_rads = math.radians(pos_degs);
+                self.joint_pub[jname].publish(Float64(pos_rads))
+
     def zero_position(self):
+        """Move all joints back to zero"""
         self.position_arm('zero')
 
     def start_grab_position(self):
         """Move the arm into a good starting position for the grab"""
         self.position_arm('start_grab')
+
+
