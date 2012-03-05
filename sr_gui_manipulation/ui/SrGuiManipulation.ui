@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>499</width>
+    <width>586</width>
     <height>300</height>
    </rect>
   </property>
@@ -19,15 +19,61 @@
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QPushButton" name="btn_detect_objects">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Run object detection and fill table with detected objects. Double click object in table to attempt pickup.</string>
+        </property>
         <property name="text">
          <string>Detect Objects</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="btn_reset_arm_position">
+       <widget class="QPushButton" name="btn_start_grab_position">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Move the arm into a good position to start detecting objects.</string>
+        </property>
         <property name="text">
-         <string>Reset Arm Position</string>
+         <string>Start Grab Arm Position</string>
+        </property>
+        <property name="default">
+         <bool>false</bool>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btn_zero_position">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>160</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Set all arm motors to 0.</string>
+        </property>
+        <property name="text">
+         <string>Zero Arm Position</string>
         </property>
        </widget>
       </item>
@@ -57,6 +103,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="btn_collision_map">
+        <property name="minimumSize">
+         <size>
+          <width>160</width>
+          <height>0</height>
+         </size>
+        </property>
         <property name="text">
          <string>Refresh Collision Map</string>
         </property>
