@@ -25,7 +25,7 @@ from std_msgs.msg import Float64
 from rosgui.QtBindingHelper import loadUi
 import QtGui
 from QtCore import QEvent, QObject, Qt, QTimer, Slot, QThread, SIGNAL, QPoint, SIGNAL
-from QtGui import * 
+from QtGui import *
 
 from tabletop_object_detector.srv import TabletopDetection
 from tabletop_collision_map_processing.srv import TabletopCollisionMapProcessing
@@ -36,7 +36,7 @@ from object_manipulation_msgs.msg import PickupGoal, PickupAction, PlaceGoal, Pl
 from object_manipulator.convert_functions import *
 from geometry_msgs.msg import Vector3Stamped, PoseStamped, Pose
 import actionlib
-from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray 
+from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray
 from tf import transformations
 import tf
 
@@ -137,14 +137,14 @@ class ObjectChooser(QWidget):
 
         direction = Vector3Stamped()
         direction.header.stamp = rospy.get_rostime()
-        direction.header.frame_id = "/fixed";
+        direction.header.frame_id = "/base_link";
         direction.vector.x = 0;
         direction.vector.y = 0;
-        direction.vector.z = 1;
+        direction.vector.z = -1;
         pickup_goal.lift.direction = direction;
         #request a vertical lift of 15cm after grasping the object
-        pickup_goal.lift.desired_distance = 0.25;
-        pickup_goal.lift.min_distance = 0.2;
+        pickup_goal.lift.desired_distance = 0.15;
+        pickup_goal.lift.min_distance = 0.0;
         #do not use tactile-based grasping or tactile-based lift
         pickup_goal.use_reactive_lift = True;
         pickup_goal.use_reactive_execution = True;
@@ -424,7 +424,7 @@ class SrGuiManipulation(QObject):
         for j in ["er", "es", "sr", "ss"]:
             topic = 'sa_'+j+'_position_controller/command'
             self.joint_pub[j] = rospy.Publisher(topic, Float64)
-      
+
     def eventFilter(self, obj, event):
         if obj is self.win and event.type() == QEvent.Close:
             # TODO: ignore() should not be necessary when returning True
