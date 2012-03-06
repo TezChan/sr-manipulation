@@ -5,9 +5,9 @@ start_grab:
 # Pull the wrist up and off the object or to clear table when starting from 0
 - wait: 1
   positions: {wrj1: -45, wrj2: 0}
-- wait: 2
+- wait: 4
   positions: {er: 45, es: 75}
-- wait: 3
+- wait: 6
   positions: {sr: 16, ss: 15}
 - wait: 3
   positions: {er: 45, es: 52, sr: 12, ss: 24, wrj1: -12, wrj2: -18}

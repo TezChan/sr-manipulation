@@ -39,7 +39,7 @@
 
     <remap from="filter_trajectory" to="/trajectory_filter_server/filter_trajectory_with_constraints" />
     <remap from="/list_controllers" to="/pr2_controller_manager/list_controllers"/>
-    <remap from="/list_controllers" to="/pr2_controller_manager/switch_controller"/>
+    <remap from="/switch_controller" to="/pr2_controller_manager/switch_controller"/>
   </node>
 
 </launch>
