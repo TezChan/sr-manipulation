@@ -163,7 +163,7 @@ class ObjectChooser(QWidget):
 
         pickup_client.send_goal(pickup_goal)
         #TODO: change this when using the robot
-        pickup_client.wait_for_result(timeout=rospy.Duration.from_sec(90.0))
+        pickup_client.wait_for_result(timeout=rospy.Duration.from_sec(3600.0))
         loginfo("Got Pickup results")
         self.pickup_result = pickup_client.get_result()
 
@@ -210,14 +210,14 @@ class ObjectChooser(QWidget):
         #which is along the z axis in the fixed frame
         direction = Vector3Stamped()
         direction.header.stamp = rospy.get_rostime()
-        direction.header.frame_id = "/fixed"
+        direction.header.frame_id = "/base_link"
         direction.vector.x = 0
         direction.vector.y = 0
         direction.vector.z = -1
         place_goal.approach.direction = direction
         #request a vertical put down motion of 10cm before placing the object
-        place_goal.approach.desired_distance = 0.1
-        place_goal.approach.min_distance = 0.05
+        place_goal.desired_retreat_distance = 0.1
+        place_goal.min_retreat_distance = 0.05
         #we are not using tactile based placing
         place_goal.use_reactive_place = False
 
@@ -228,7 +228,7 @@ class ObjectChooser(QWidget):
         place_client.send_goal(place_goal)
         #timeout after 1sec
         #TODO: change this when using the robot
-        place_client.wait_for_result(timeout=rospy.Duration.from_sec(90.0))
+        place_client.wait_for_result(timeout=rospy.Duration.from_sec(3600.0))
         rospy.loginfo("Got Place results")
 
         place_result = place_client.get_result()
