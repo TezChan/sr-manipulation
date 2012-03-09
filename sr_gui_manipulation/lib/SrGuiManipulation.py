@@ -137,6 +137,8 @@ class ObjectChooser(QWidget):
         pickup_goal.collision_object_name = graspable_object_name
         pickup_goal.collision_support_surface_name = self.gui.collision_support_surface_name
 
+        pickup_goal.ignore_collisions = True
+
         pickup_goal.arm_name = "right_arm"
         #pickup_goal.desired_approach_distance = 0.05
         #pickup_goal.min_approach_distance = 0.02
@@ -146,11 +148,11 @@ class ObjectChooser(QWidget):
         direction.header.frame_id = "/base_link";
         direction.vector.x = 0;
         direction.vector.y = 0;
-        direction.vector.z = -1;
+        direction.vector.z = 1;
         pickup_goal.lift.direction = direction;
         #request a vertical lift of 15cm after grasping the object
-        pickup_goal.lift.desired_distance = 0.15;
-        pickup_goal.lift.min_distance = 0.0;
+        pickup_goal.lift.desired_distance = 0.2;
+        pickup_goal.lift.min_distance = 0.1;
         #do not use tactile-based grasping or tactile-based lift
         pickup_goal.use_reactive_lift = True;
         pickup_goal.use_reactive_execution = True;
