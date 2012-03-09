@@ -23,9 +23,10 @@
     <remap from="right_arm/get_fk" to="/shadow_right_arm_kinematics/get_fk" />
     <remap from="right_arm/get_ik_solver_info" to="/shadow_right_arm_kinematics/get_ik_solver_info"/>
 
-    <remap from="right_arm_joint_controller" to="/shadow_right_arm_kinematics/get_ik_solver_info"/>
+    <!--<remap from="right_arm_joint_controller" to="/shadow_right_arm_kinematics/get_ik_solver_info"/> -->
+    <param name="right_arm_joint_controller" value="r_arm_joint_trajectory_controller" />
 
-    <param name="right_arm_joint_controller" value="r_arm_controller" />
+    <param name="right_arm_cartesian_controller" value="r_arm_cartesian_pose_controller" />
 
     <remap from="right_arm/move_arm" to="/move_right_arm" />
     <param name="default_cluster_planner" value="/sr_grasp_planner/plan_point_cluster_grasp" />

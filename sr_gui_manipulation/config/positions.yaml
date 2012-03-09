@@ -10,7 +10,7 @@ start_grab:
 - wait: 6
   positions: {sr: 16, ss: 15}
 - wait: 3
-  positions: {er: 45, es: 52, sr: 12, ss: 24, wrj1: -12, wrj2: -18}
+  positions: {er: 40, es: 75, sr: 10, ss: 11, wrj1: 15, wrj2: -8}
 zero:
 - wait: 0
   positions: {er: 0, es: 0, sr: 0, ss: 0, ffj0: 0, ffj3: 0, ffj4: 0, lfj0: 0, lfj3: 0, lfj4: 0, lfj5: 0, mfj0: 0, mfj3: 0, mfj4: 0, rfj0: 0, rfj3: 0, rfj4: 0, thj1: 0, thj2: 0, thj3: 0, thj4: 0, thj5: 0, wrj1: 0, wrj2: 0}
