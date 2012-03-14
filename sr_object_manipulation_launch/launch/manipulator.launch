@@ -33,6 +33,7 @@
     <param name="default_database_planner" value="/database_grasp_planning"/>
 
     <remap from="right_arm/reactive_grasp" to="/reactive_grasp/right" />
+    <remap from="right_arm/reactive_place" to="/reactive_place/right" />
     <remap from="right_arm/grasp_status" to="/right_arm/grasp_status" />
     <remap from="right_arm/reactive_lift" to="/reactive_lift/right" />
 

@@ -7,7 +7,6 @@
 	respawn="false">
   </node>
 
-
   <!-- still need a point cloud 1 for the collision_map_self_occ_node -->
   <node pkg="point_cloud_converter" name="point_cloud_converter" type="point_cloud_converter" respawn="false">
   	<remap from="/points2_in" to="/full_cloud_filtered" />

@@ -112,7 +112,7 @@ class ObjectChooser(QWidget):
             initial_pose.header.stamp = rospy.get_rostime()
             initial_pose.header.frame_id = "/fixed"
             initial_pose.pose.position.x = 0.0
-            initial_pose.pose.position.y = 0.0
+            initial_pose.pose.position.y = 0.1
             initial_pose.pose.position.z = 0.0
             q=transformations.quaternion_about_axis(0.0, (1,0,0))
             initial_pose.pose.orientation.x = q[0]
@@ -215,6 +215,8 @@ class ObjectChooser(QWidget):
         direction.vector.y = 0
         direction.vector.z = -1
         place_goal.approach.direction = direction
+        place_goal.approach.min_distance = 0.05
+        place_goal.approach.desired_distance = 0.2
         #request a vertical put down motion of 10cm before placing the object
         place_goal.desired_retreat_distance = 0.1
         place_goal.min_retreat_distance = 0.05
@@ -237,37 +239,26 @@ class ObjectChooser(QWidget):
             rospy.logerr("The place action has failed: " + str(place_result.manipulation_result.value) )
         print place_result
 
-    def compute_list_of_poses(self, initial_pose, graspable_object, rect_w=0.20, rect_h=0.20, resolution=0.02):
+    def compute_list_of_poses(self, initial_pose, graspable_object, rect_w=0.10, rect_h=0.10, resolution=0.02):
         '''
         Computes a list of possible poses in a rectangle of 2*rect_w by 2*rect_h, with the given resolution.
         In our case, rect_w is along the x axis, and rect_h along the y_axis.
         '''
         list_of_poses = []
 
-        current_x = initial_pose.pose.position.x - rect_w
-        stop_x    = initial_pose.pose.position.x + rect_w
-        current_y = initial_pose.pose.position.y - rect_h
-        start_y   = current_y
-        stop_y    = initial_pose.pose.position.y + rect_h
+        current_pose = PoseStamped()
+        current_pose.header.stamp = rospy.get_rostime()
+        current_pose.header.frame_id = "/fixed"
+        current_pose.pose.position.x = initial_pose.pose.position.x
+        current_pose.pose.position.y = initial_pose.pose.position.y
+        current_pose.pose.position.z = initial_pose.pose.position.z
+        current_pose.pose.orientation.x = initial_pose.pose.orientation.x
+        current_pose.pose.orientation.y = initial_pose.pose.orientation.y
+        current_pose.pose.orientation.z = initial_pose.pose.orientation.z
+        current_pose.pose.orientation.w = initial_pose.pose.orientation.w
+        rospy.loginfo( " placing object at: "+str(current_pose)  )
 
-        while current_x <= stop_x:
-            current_x += resolution
-            current_y = start_y
-            while current_y <= stop_y:
-                current_y += resolution
-
-                current_pose = PoseStamped()
-                current_pose.header.stamp = rospy.get_rostime()
-                current_pose.header.frame_id = "/fixed"
-                current_pose.pose.position.x = current_x
-                current_pose.pose.position.y = current_y
-                current_pose.pose.position.z = initial_pose.pose.position.z
-                current_pose.pose.orientation.x = initial_pose.pose.orientation.x
-                current_pose.pose.orientation.y = initial_pose.pose.orientation.y
-                current_pose.pose.orientation.z = initial_pose.pose.orientation.z
-                current_pose.pose.orientation.w = initial_pose.pose.orientation.w
-
-                list_of_poses.append(current_pose)
+        list_of_poses.append(current_pose)
 
         self.draw_place_area(list_of_poses, graspable_object)
 
@@ -284,9 +275,9 @@ class ObjectChooser(QWidget):
 
         for index,pose_stamped in enumerate(list_of_poses):
             pose_tmp = Pose()
-            pose_tmp.position.x = pose_stamped.pose.position.x + trans_palm[0]
-            pose_tmp.position.y = pose_stamped.pose.position.y + trans_palm[1]
-            pose_tmp.position.z = 0.01
+            pose_tmp.position.x = pose_stamped.pose.position.x
+            pose_tmp.position.y = pose_stamped.pose.position.y
+            pose_tmp.position.z = pose_stamped.pose.position.z
 
             pose_tmp.orientation.x = pose_stamped.pose.orientation.x
             pose_tmp.orientation.y = pose_stamped.pose.orientation.y
@@ -470,6 +461,7 @@ class SrGuiManipulation(QObject):
         except rospy.ServiceException, e:
             print "Service did not process request: %s" % str(e)
 
+        print self.raw_objects
         # Take a new collision map + add the detected objects to the collision
         # map and get graspable objects from them
         tabletop_collision_map_res = self.process_collision_map()
