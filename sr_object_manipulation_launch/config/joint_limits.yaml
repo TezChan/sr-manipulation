@@ -1,37 +1,37 @@
 joint_limits:
   ShoulderJRotate:
     has_position_limits: true
-    min_position: -1.57079632679
+    min_position: -0.785398163397
     max_position: 0.785398163397
     has_velocity_limits: true
-    max_velocity: 1.5
+    max_velocity: 0.75
     has_acceleration_limits: true
     max_acceleration: 1.0
     angle_wraparound: false
   ShoulderJSwing:
     has_position_limits: true
     min_position: 0.0
-    max_position: 1.57079632679
+    max_position: 1.40 # 80 deg
     has_velocity_limits: true
-    max_velocity: 1.52
+    max_velocity: 0.3
     has_acceleration_limits: true
     max_acceleration: 1.0
     angle_wraparound: false
   ElbowJSwing:
     has_position_limits: true
-    min_position: 0.0
-    max_position: 2.09439510239
+    min_position: 0.52 # 30 deg
+    max_position: 2.0 # 114 deg
     has_velocity_limits: true
-    max_velocity: 1.5
+    max_velocity: 0.3
     has_acceleration_limits: true
     max_acceleration: 1.0
     angle_wraparound: false
   ElbowJRotate:
     has_position_limits: true
-    min_position: -1.57079632679
-    max_position: 1.57079632679
+    min_position: -1.40 # 80 deg
+    max_position: 1.40 # 80 deg
     has_velocity_limits: true
-    max_velocity: 1.5
+    max_velocity: 1.2
     has_acceleration_limits: true
     max_acceleration: 1.0
     angle_wraparound: false

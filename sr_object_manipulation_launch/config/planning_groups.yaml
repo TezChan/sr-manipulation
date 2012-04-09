@@ -9,7 +9,6 @@ groups:
       ShoulderJSwing
       ElbowJSwing
       ElbowJRotate
-      arm_link
       WRJ2
       WRJ1
     links:
@@ -27,7 +26,6 @@ groups:
       ShoulderJSwing
       ElbowJSwing
       ElbowJRotate
-      arm_link
       WRJ2
       WRJ1
     links:

@@ -1,6 +1,6 @@
 household_objects_database:
-  database_host: horus
-  database_port: 5432
+  database_host: localhost
+  database_port: 15432
   database_user: willow
   database_pass: willow
-  database_name: household_objects
+  database_name: household_objects_electric

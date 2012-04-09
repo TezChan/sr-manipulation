@@ -29,7 +29,6 @@ joints_costs:
       ShoulderJSwing: 1.0
       ElbowJSwing: 1.0
       ElbowJRotate: 1.0
-      arm_link: 1.0
       WRJ2: 1.0
       WRJ1: 1.0
 
@@ -38,7 +37,6 @@ joint_velocity_limits:
       ShoulderJSwing: 1.0
       ElbowJSwing: 1.0
       ElbowJRotate: 1.0
-      arm_link: 1.0
       WRJ2: 1.0
       WRJ1: 1.0
 
