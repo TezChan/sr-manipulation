@@ -1,6 +1,6 @@
 <launch>
   <node pkg="robot_self_filter" type="self_filter" name="kinect_self_filter"
-  	respawn="false" output="screen">
+  	respawn="false" output="screen" machine="threedsensor">
     <remap from="robot_description" to="robot_description"/>
 
     <remap from="cloud_in" to="/pcl_filters/box_filtered" />
@@ -13,7 +13,7 @@
   </node>
 
   <!-- need to clear known objects from scans -->
-  <node pkg="planning_environment" type="filter_attached_objects" name="filter_attached_objects_stereo" output="screen">
+  <node pkg="planning_environment" type="filter_attached_objects" name="filter_attached_objects_stereo" output="screen" machine="threedsensor">
     <remap from="cloud_in" to="/pcl_filters/robot_filtered" />
     <remap from="cloud_out" to="/full_cloud_filtered" />
     <param name="sensor_frame" type="string" value="/camera_link" />

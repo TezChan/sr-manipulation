@@ -4,11 +4,12 @@
   <node name="cluster_bounding_box_finder" pkg="object_manipulator"
 	type="cluster_bounding_box_finder_server.py"
 	output="screen"
-	respawn="false">
+	respawn="false"
+        machine="dataprocessing">
   </node>
 
   <!-- still need a point cloud 1 for the collision_map_self_occ_node -->
-  <node pkg="point_cloud_converter" name="point_cloud_converter" type="point_cloud_converter" respawn="false">
+  <node pkg="point_cloud_converter" name="point_cloud_converter" type="point_cloud_converter" respawn="false" machine="dataprocessing">
   	<remap from="/points2_in" to="/full_cloud_filtered" />
   	<remap from="/points_out" to="/full_cloud_filtered/pcl_compat" />
   </node>

@@ -5,6 +5,6 @@
         <param name="right_arm/root_name" type="string" value="desk_support" />
         <param name="right_arm/tip_name" type="string" value="palm" />
         <param name="kinematics_solver" type="string" value="arm_kinematics_constraint_aware/KDLArmKinematicsPlugin" />
-	<remap from="joint_states" to="/gazebo/joint_states"/>
+	<remap from="joint_states" to="$(arg merged_joint_states)"/>
     </node>
 </launch>

@@ -1,0 +1,53 @@
+<launch>
+	<group unless="$(optenv SIMULATED 0)">
+		<!-- merge the arm / hand joint_states topics to publish onto /joint_states -->
+		<node pkg="sr_utilities" type="ordered_hand_arm_joint_states_merger" name="joint_states_merger"/>
+
+		<!-- merge the arm / hand controller manager (services) on real robot -->
+		<node pkg="sr_controller_manager" type="sr_controller_manager" name="sr_controller_manager"/>
+	</group>
+	<!--
+	    Trajectories / grasp execution
+	-->
+<!--	<node pkg="sr_move_arm" type="move_arm_simple_action" name="move_arm_simple_action"  machine="robot"/>  -->
+
+        <node pkg="sr_mechanism_controllers" type="joint_trajectory_action_controller" name="sr_joint_trajectory_action_controller"/>
+
+	<group unless="$(optenv SIMULATED 0)">
+		<arg name="tactile_prefix" default="" /> 
+	</group>
+	<!-- In simulation gazebo already publishes merged joint_states on /gazebo/joint_states -->
+	<group if="$(optenv SIMULATED 0)">
+		<arg name="tactile_prefix" default="/sr_tactile" /> 
+	</group>
+
+
+
+	<node pkg="sr_move_arm" type="hand_posture_execution" name="hand_posture_execution" machine="robot">
+		<remap from="is_hand_occupied" to ="$(arg tactile_prefix)/is_hand_occupied"/>
+        </node>
+
+	<node name="reactive_grasp_node_right" pkg="sr_move_arm"
+	      type="reactive_grasp_server.py" args="r" respawn="false" output="screen">
+	  <remap from="which_fingers_are_touching" to="$(arg tactile_prefix)/which_fingers_are_touching" />
+	  <param name="use_slip_controller" value="True"/>
+	  <param name="use_slip_detection" value="True"/>
+	  <param name="grasp_num_tries" value="4"/>
+          <group if="$(optenv SIMULATED 0)">	
+	    <param name="light_touch_thresholds" value="[100.,100.,100.,100.,0.0]" />
+            <param name="grasp_touch_thresholds" value="[117.,117.,113.,111.,0.0]" />
+          </group>
+	  <group unless="$(optenv SIMULATED 0)">
+    <!-- DEPENDS if we use PST sensors or KCL sensors ... should this be defined in the sr_move_arm ? -->	
+	    <rosparam file="$(find sr_move_arm)/config/tactile_thresholds.yaml" command="load"/>
+          </group>
+	</node>
+
+	<group if="$(optenv SIMULATED 0)">
+	<node pkg="sr_tactile_sensors" name="sr_tactile" type="sr_tactile_virtual_gazebo" respawn="false">
+	  <rosparam file="$(find sr_tactile_sensors)/params/sensor_names.yaml" command="load"/>
+	</node>
+	</group>
+</launch>
+
+

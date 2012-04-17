@@ -13,17 +13,22 @@
   <include file="$(find sr_object_manipulation_launch)/launch/filters.launch"/>
 
   <!-- <include file="$(find openni_launch)/launch/openni.launch"/>-->
+
+  <!-- start attaching the platform to various required frames -->
+  <include file="$(find sr_object_manipulation_launch)/launch/static_transform.launch"/>
+
   <group unless="$(optenv SIMULATED 0)">
-    <!-- Sets the position of the kinect in comparison to the robot -->
-    <include file="$(find sr_object_manipulation_launch)/launch/static_transform.launch"/>
+    <!-- Sets the position of the kinect in comparison to the robot when NOT simulated -->
+    <include file="$(find sr_object_manipulation_launch)/launch/kinect_static_transform.launch"/>
+    <include file="$(find sr_object_manipulation_launch)/launch/kinect_setup.launch"/>
   </group>
 
   <!-- start the object detection and recognition -->
   <include file="$(find sr_object_manipulation_launch)/launch/household_object.launch"/>
   <include file="$(find sr_object_manipulation_launch)/launch/tabletop_node.launch"/>
 
-  <!-- start the hand and arm interface -->
-  <!--  <include file="$(find sr_hand)/launch/sr_arm_motor.launch"/> -->
+  <!-- start linking the hand and arm -->
+  <include file="$(find sr_object_manipulation_launch)/launch/arm_and_hand_motor.launch"/>
 
   <!-- starts the arm navigation -->
   <include file="$(find shadow_arm_navigation)/launch/shadow_arm_navigation.launch" />

@@ -1,8 +1,8 @@
 <launch>
-  <rosparam command="load" file="$(find sr_object_manipulation_launch)/config/hand_description.yaml"/>
+<!-- REMOVED FOR A TEST <rosparam command="load" file="$(find sr_object_manipulation_launch)/config/hand_description.yaml"/> -->
   <rosparam command="load" file="$(find sr_object_manipulation_launch)/config/right_arm_ik_start_angles.yaml"/>
 
-  <include file="$(find sr_object_manipulation_launch)/launch/sr_arm_motor_finger_ik.launch"/>
+
 
   <!-- interpolated IK -->
   <node name="interpolated_ik_node_right" pkg="interpolated_ik_motion_planner"
@@ -40,8 +40,8 @@
     <remap from="right_arm/joint_trajectory" to="r_arm_controller/joint_trajectory_action"/>
 
     <remap from="filter_trajectory" to="/trajectory_filter_server/filter_trajectory_with_constraints" />
-    <remap from="/list_controllers" to="/pr2_controller_manager/list_controllers"/>
-    <remap from="/switch_controller" to="/pr2_controller_manager/switch_controller"/>
+    <remap from="/list_controllers" to="/sr_controller_manager/list_controllers"/>
+    <remap from="/switch_controller" to="/sr_controller_manager/switch_controller"/>
   </node>
 
 </launch>

@@ -1,4 +1,13 @@
 <launch>
+    <!-- On the real robot we expect a merger to merge the joint_states on /joint_states -->
+    <group unless="$(optenv SIMULATED 0)">
+	    <arg name="merged_joint_states" default="/joint_states" /> 
+    </group>
+    <!-- In simulation gazebo already publishes merged joint_states on /gazebo/joint_states -->
+    <group if="$(optenv SIMULATED 0)">
+	    <arg name="merged_joint_states" default="/gazebo/joint_states" /> 
+    </group>
+
     <include file="$(find shadow_arm_navigation)/launch/shadow_planning_environment.launch" />
     <include file="$(find planning_environment)/launch/environment_server.launch">
         <arg name="use_monitor" value="true" />

@@ -1,0 +1,9 @@
+<launch>
+  <include file="$(find sr_object_manipulation_launch)/machines/threedsensor.machine"/>
+	<!-- activate depth registration -->
+    <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam" args="set /camera/driver depth_registration true" machine="threedsensor"/>
+	<!-- add a time offset to resynchronize arm and hand -->
+<!--    <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam2" args="set /camera/driver depth_time_offset -0.1" machine="threedsensor"/>
+    <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam3" args="set /camera/driver image_time_offset -0.1" machine="threedsensor"/>
+	-->
+</launch>

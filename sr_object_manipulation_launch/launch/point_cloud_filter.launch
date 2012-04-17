@@ -2,10 +2,10 @@
 
   <group ns="/pcl_filters">
     <!-- PCL Manager -->
-    <node pkg="nodelet" type="nodelet" name="box_filter_pcl_manager" args="manager" output="screen"/>
+    <node pkg="nodelet" type="nodelet" name="box_filter_pcl_manager" args="manager" output="screen" machine="threedsensor"/>
 
     <!-- Run a passthrough filter to delimit in x direction -->
-    <node pkg="nodelet" type="nodelet" name="psx" args="load pcl/PassThrough box_filter_pcl_manager" output="screen">
+    <node pkg="nodelet" type="nodelet" name="psx" args="load pcl/PassThrough box_filter_pcl_manager" output="screen" machine="threedsensor">
       <remap from="~input" to="/camera/depth_registered/points" />
       <rosparam>
         filter_field_name: x
@@ -15,7 +15,7 @@
     </node>
 
     <!-- Run a passthrough filter to delimit in y direction -->
-    <node pkg="nodelet" type="nodelet" name="psy" args="load pcl/PassThrough box_filter_pcl_manager" output="screen">
+    <node pkg="nodelet" type="nodelet" name="psy" args="load pcl/PassThrough box_filter_pcl_manager" output="screen" machine="threedsensor">
       <remap from="~input" to="psx/output" />
       <rosparam>
         filter_field_name: y
@@ -25,17 +25,17 @@
     </node>
 
     <!-- Run a passthrough filter to delimit in z direction -->
-    <node pkg="nodelet" type="nodelet" name="psz" args="load pcl/PassThrough box_filter_pcl_manager" output="screen">
+    <node pkg="nodelet" type="nodelet" name="psz" args="load pcl/PassThrough box_filter_pcl_manager" output="screen" machine="threedsensor">
       <remap from="~input" to="psy/output" />
       <rosparam>
         filter_field_name: z
         filter_limit_min: 0.0
-        filter_limit_max: 1.1
+        filter_limit_max: 2.1
       </rosparam>
     </node>
 
     <!-- removes the outliers -->
-    <node pkg="nodelet" type="nodelet" name="rm_outliers" args="load pcl/StatisticalOutlierRemoval box_filter_pcl_manager" output="screen">
+    <node pkg="nodelet" type="nodelet" name="rm_outliers" args="load pcl/StatisticalOutlierRemoval box_filter_pcl_manager" output="screen" machine="threedsensor">
       <remap from="~input" to="psz/output" />
       <remap from="~output" to="box_filtered" />
       <rosparam>

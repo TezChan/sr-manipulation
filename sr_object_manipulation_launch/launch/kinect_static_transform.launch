@@ -1,0 +1,6 @@
+<launch>
+  <include file="$(find sr_object_manipulation_launch)/machines/threedsensor.machine"/>
+<!-- This transform should be computed by the calibration software -->
+  <node pkg="tf" type="static_transform_publisher" name="trunk_to_kinect"
+    args="0.02742 0.18024 0.38953 -0.594811 0.36128 0.203393 0.688727 /shadowarm_trunk /camera_link 100" machine="threedsensor"/>
+</launch>

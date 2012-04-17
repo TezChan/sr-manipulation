@@ -3,6 +3,6 @@
         <param name="group" type="string" value="right_arm" />
         <remap from="arm_ik" to="shadow_right_arm_kinematics/get_constraint_aware_ik" />
         <param name="controller_action_name" type="string" value="r_arm_controller/joint_trajectory_action" />
-	<remap from="joint_states" to="/gazebo/joint_states"/>
+	<remap from="joint_states" to="$(arg merged_joint_states)"/>
     </node>
 </launch>
