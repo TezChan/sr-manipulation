@@ -1,7 +1,7 @@
 <launch>
-  <node pkg="tf" type="static_transform_publisher" name="fixed_to_base_link"
-    args="0.0 0.0 0.0 0.0 0.0 0.0 /fixed /base_link 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="world_to_base_link"
+    args="0.0 0.0 0.0 0.0 0.0 0.0 /world /base_link 100"/>
 
-  <node pkg="tf" type="static_transform_publisher" name="fixed_to_world"
-    args="0.0 0.0 0.0 0.0 0.0 0.0 /fixed /world 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="world_to_fixed"
+    args="0.0 0.0 0.0 0.0 0.0 0.0 /world /fixed 100"/>
 </launch>

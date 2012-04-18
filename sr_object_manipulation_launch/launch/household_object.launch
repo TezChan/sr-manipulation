@@ -7,7 +7,6 @@
   <!-- start the database wrapper node -->
   <node pkg="household_objects_database" name="objects_database_node"  type="objects_database_node"
 	respawn="false" output="screen" machine="household_database">
-<!-- REMOVED FOR A TEST    <remap from="robot_description" to="hand_description"/> -->
   </node>
 
 </launch>

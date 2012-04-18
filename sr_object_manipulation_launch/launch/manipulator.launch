@@ -1,5 +1,5 @@
 <launch>
-<!-- REMOVED FOR A TEST <rosparam command="load" file="$(find sr_object_manipulation_launch)/config/hand_description.yaml"/> -->
+ <rosparam command="load" file="$(find sr_object_manipulation_launch)/config/hand_description.yaml"/> 
   <rosparam command="load" file="$(find sr_object_manipulation_launch)/config/right_arm_ik_start_angles.yaml"/>
 
 

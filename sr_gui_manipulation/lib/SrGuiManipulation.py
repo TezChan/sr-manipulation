@@ -393,11 +393,11 @@ class SrGuiManipulation(QObject):
         self.win.btn_zero_position.pressed.connect(self.zero_position)
 
         self.robot_lib_eth = EtherCAT_Hand_Lib()
-        if not self.robot_lib_eth.activate_joint_states():
-            logerr("The EtherCAT Hand node doesn't seem to be running")
-        self.robot_lib_can = ShadowHand_ROS()
-        if not self.robot_lib_can.has_arm():
-            logerr("The CAN Arm node doesn't seem to be running")
+#        if not self.robot_lib_eth.activate_joint_states():
+#            logerr("The EtherCAT Hand node doesn't seem to be running")
+#        self.robot_lib_can = ShadowHand_ROS()
+#        if not self.robot_lib_can.has_arm():
+#            logerr("The CAN Arm node doesn't seem to be running")
 
         self.init_services()
         self.init_joint_pubs()
