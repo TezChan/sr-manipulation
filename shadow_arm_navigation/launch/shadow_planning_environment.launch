@@ -1,4 +1,4 @@
 <launch>
-    <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_hand)/model/robots/xacro/arm_and_hand_motor.urdf.xacro'" />
+    <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_hand)/model/robots/xacro/arm_and_hand_motor_ellipsoid.urdf.xacro'" />
     <rosparam command="load" ns="robot_description_planning" file="$(find shadow_arm_navigation)/config/shadow_planning_description.yaml" />
 </launch>

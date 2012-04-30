@@ -2,4 +2,4 @@
 # ['ShoulderJRotate', 'ShoulderJSwing', 'ElbowJSwing', 'ElbowJRotate'
 # , 'WRJ2', 'WRJ1']
 
-right_arm_ik_start_angles: [[0.0,0.0,1.57,-0.7854,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0]]
+right_arm_ik_start_angles: [[0.0,0.0,1.57,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0]]

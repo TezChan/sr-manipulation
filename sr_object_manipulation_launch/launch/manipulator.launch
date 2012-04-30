@@ -8,7 +8,7 @@
   <node name="interpolated_ik_node_right" pkg="interpolated_ik_motion_planner"
 	type="interpolated_ik_motion_planner.py" args="r" respawn="false">
     <param name="robot_prefix" value = "shadow"/>
-    <param name="collision_aware_ik" value = "1"/>
+    <param name="collision_aware_ik" value = "0"/>
     <remap from="~ik_start_angles" to="/right_arm_ik_start_angles"/>
   </node>
 
