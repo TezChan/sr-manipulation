@@ -1,0 +1,31 @@
+<package>
+  <description brief="handle_gui_manipulation">
+
+     handle_gui_manipulation - HANDLE GUI plugin for manipulation, detecting objects and starting grabs.
+
+  </description>
+  <author>Guillaume WALCK (UPMC)</author>
+  <license></license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/handle_gui_manipulation</url>
+  <depend package="rospy"/>
+  <depend package="rosgui"/>
+  <depend package="rosgui_rospy"/>
+  <depend package="rosgui_roscpp"/>
+  <depend package="rostopic"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="tabletop_collision_map_processing"/>
+  <depend package="object_manipulator"/>
+  <depend package="sr_robot_lib"/>
+  <depend package="sr_hand"/>
+  <depend package="actionlib"/>
+  <depend package="control_msgs"/>
+
+  <export>
+    <rosgui plugin="${prefix}/handle_gui_manipulation.xml"/>
+  </export>
+
+</package>
+<!-- vim: sw=2:ts=2:expandtab
+-->
