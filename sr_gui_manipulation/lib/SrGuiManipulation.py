@@ -151,8 +151,8 @@ class ObjectChooser(QWidget):
         direction.vector.z = 1;
         pickup_goal.lift.direction = direction;
         #request a vertical lift of 15cm after grasping the object
-        pickup_goal.lift.desired_distance = 0.2;
-        pickup_goal.lift.min_distance = 0.1;
+        pickup_goal.lift.desired_distance = 0.05;
+        pickup_goal.lift.min_distance = 0.03;
         #do not use tactile-based grasping or tactile-based lift
         pickup_goal.use_reactive_lift = True;
         pickup_goal.use_reactive_execution = True;

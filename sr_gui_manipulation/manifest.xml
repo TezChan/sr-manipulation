@@ -11,6 +11,7 @@
   <depend package="rospy"/>
   <depend package="rosgui"/>
   <depend package="rosgui_rospy"/>
+  <depend package="rosgui_roscpp"/>
   <depend package="rostopic"/>
   <depend package="std_msgs"/>
   <depend package="std_srvs"/>
