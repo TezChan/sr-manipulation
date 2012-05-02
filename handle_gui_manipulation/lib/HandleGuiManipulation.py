@@ -14,7 +14,7 @@ from QtGui import *
 
 from tabletop_object_detector.msg import TabletopDetectionResult, Table
 from tabletop_collision_map_processing.srv import TabletopCollisionMapProcessing
-from household_objects_database_msgs.srv import GetModelDescription,GetModelList
+from household_objects_database_msgs.srv import GetModelDescription,GetModelList, GetModelListRequest
 import object_manipulator.draw_functions as draw_functions
 from object_manipulation_msgs.srv import FindClusterBoundingBox, FindClusterBoundingBoxRequest
 from object_manipulation_msgs.msg import PickupGoal, PickupAction, PlaceGoal, PlaceAction
@@ -27,8 +27,8 @@ import trajectory_msgs.msg
 from tf import transformations
 import tf
 
-from uc3m_objtrack.srv import GetObjectPose, GetObjectPoseRequest, GetObjectPoseResponse
-from uc3m_objdetect.srv import GetCentralObjectOnTable, GetCentralObjectOnTableRequest
+from uc3m_msgs.srv import GetObjectPose, GetObjectPoseRequest, GetObjectPoseResponse
+from uc3m_msgs.srv import GetCentralObjectOnTable, GetCentralObjectOnTableRequest
 
 import yaml
 
@@ -381,40 +381,58 @@ class HandleGuiManipulation(QObject):
 	self.init_data()
 
     def init_services(self):
+	rospy.loginfo("Connecting to services")
         """Service setup"""
         srvname = '/tabletop_collision_map_processing/tabletop_collision_map_processing'
-        rospy.wait_for_service(srvname)
-        self.service_tabletop_collision_map = rospy.ServiceProxy(srvname, TabletopCollisionMapProcessing)
+	try:
+            rospy.wait_for_service(srvname,5)
+       	    self.service_tabletop_collision_map = rospy.ServiceProxy(srvname, TabletopCollisionMapProcessing)
+	except:
+	    rospy.logerr("Tabletop collision map precessing not found")
 
  	srvname = '/uc3m_hdb/objects_database_node/get_model_description'
-        rospy.wait_for_service(srvname)
-        self.service_db_get_model_description = rospy.ServiceProxy(srvname, GetModelDescription)
-
+	try:
+            rospy.wait_for_service(srvname,5)
+            self.service_db_get_model_description = rospy.ServiceProxy(srvname, GetModelDescription)
+	except:
+	    rospy.logerr("UC3M database node not found")
+	    return
 
 	# UC3M object tracker
         srvname = '/get_object_pose'
-        rospy.wait_for_service(srvname)
-        self.service_get_object_pose = rospy.ServiceProxy(srvname, GetObjectPose)
+	try:
+            rospy.wait_for_service(srvname,2)
+            self.service_get_object_pose = rospy.ServiceProxy(srvname, GetObjectPose)
+	except:
+	    rospy.logerr("UC3M objtrack not found")
 
 	# UC3M object detect
 	srvname = '/get_central_object_on_table'
-        rospy.wait_for_service(srvname)
-        self.service_get_central_object = rospy.ServiceProxy(srvname, GetCentralObjectOnTable)
+	try:
+            rospy.wait_for_service(srvname,2)
+            self.service_get_central_object = rospy.ServiceProxy(srvname, GetCentralObjectOnTable)
+	except:
+	    rospy.logerr("UC3M objdetect not found")
 
 	# UC3M list access via standard DB (be careful to use correct DB)
 	srvname = '/uc3m_hdb/objects_database_node/get_model_list'
-	rospy.wait_for_service(srvname)
-	self.service_get_model_list = rospy.ServiceProxy(srvname, GetModelList)
+	try:
+	    rospy.wait_for_service(srvname,2)
+	    self.service_get_model_list = rospy.ServiceProxy(srvname, GetModelList)
+	except:
+	    rospy.logerr("UC3M database node not found")
 
-    def init_data(self)
+    def init_data(self):
 	model_ids1=self.query_object_list("handle_uc3m_single_view")
 	model_ids2=self.query_object_list("handle_manual")
 	existing_model_ids=[]
 	existing_model_ids.append(model_ids1)
 	existing_model_ids.append(model_ids2)
+	print existing_model_ids
 	self.existing_model_names=[]
 	for model_id in existing_model_ids:
-	    mymodel=get_object_name(model_id)
+	    print model_id
+	    mymodel=self.get_object_name(model_id)
 	    self.existing_model_names.append(mymodel.name)
 
     def eventFilter(self, obj, event):
@@ -439,8 +457,10 @@ class HandleGuiManipulation(QObject):
 	# handle_uc3m_single_view or handle_manual
 	request=GetModelListRequest()
 	request.model_set=model_set
+	print request
 	try:
 	    response=self.service_get_model_list(request)
+	    print response
 	except rospy.ServiceException, e:
 	    print "Service did not process request: %s" % str(e)
 	return response.model_ids

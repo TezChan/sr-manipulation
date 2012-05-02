@@ -96,6 +96,8 @@ class ObjectChooser(QWidget):
             return
 
         box_mat = pose_to_mat(box_pose.pose)
+        rospy.logerr("box_pose %f %f %f  q: %f %f %f %f",box_pose.pose.position.x,box_pose.pose.position.y,box_pose.pose.position.z,
+box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientation.z,box_pose.pose.orientation.w)
         box_ranges = [[-box_dims.x / 2, -box_dims.y / 2, -box_dims.z / 2],
                       [box_dims.x / 2, box_dims.y / 2, box_dims.z / 2]]
 
@@ -112,7 +114,7 @@ class ObjectChooser(QWidget):
             initial_pose.header.stamp = rospy.get_rostime()
             initial_pose.header.frame_id = "/fixed"
             initial_pose.pose.position.x = 0.0
-            initial_pose.pose.position.y = 0.1
+            initial_pose.pose.position.y = 0.2
             initial_pose.pose.position.z = 0.0
             q=transformations.quaternion_about_axis(0.0, (1,0,0))
             initial_pose.pose.orientation.x = q[0]

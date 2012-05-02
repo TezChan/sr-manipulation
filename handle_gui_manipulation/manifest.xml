@@ -21,7 +21,7 @@
   <depend package="sr_hand"/>
   <depend package="actionlib"/>
   <depend package="control_msgs"/>
-
+  <depend package="uc3m_msgs" />
   <export>
     <rosgui plugin="${prefix}/handle_gui_manipulation.xml"/>
   </export>
