@@ -377,8 +377,11 @@ class HandleGuiManipulation(QObject):
         self.win.btn_collision_map.pressed.connect(self.process_collision_map)
         self.win.btn_collision_map.setEnabled(False)
 
+	rospy.loginfo("init services")
         self.init_services()
+	rospy.loginfo("init_data")
 	self.init_data()
+	rospy.loginfo("init done")
 
     def init_services(self):
 	rospy.loginfo("Connecting to services")
@@ -387,6 +390,7 @@ class HandleGuiManipulation(QObject):
 	try:
             rospy.wait_for_service(srvname,5)
        	    self.service_tabletop_collision_map = rospy.ServiceProxy(srvname, TabletopCollisionMapProcessing)
+	    rospy.loginfo("Connected to tabletop node")
 	except:
 	    rospy.logerr("Tabletop collision map precessing not found")
 
@@ -394,12 +398,13 @@ class HandleGuiManipulation(QObject):
 	try:
             rospy.wait_for_service(srvname,5)
             self.service_db_get_model_description = rospy.ServiceProxy(srvname, GetModelDescription)
+	    rospy.loginfo("connected to UC3M database")
 	except:
 	    rospy.logerr("UC3M database node not found")
 	    return
 
 	# UC3M object tracker
-        srvname = '/get_object_pose'
+        srvname = '/uc3m_hdb/get_object_pose'
 	try:
             rospy.wait_for_service(srvname,2)
             self.service_get_object_pose = rospy.ServiceProxy(srvname, GetObjectPose)
@@ -407,7 +412,7 @@ class HandleGuiManipulation(QObject):
 	    rospy.logerr("UC3M objtrack not found")
 
 	# UC3M object detect
-	srvname = '/get_central_object_on_table'
+	srvname = '/uc3m_hdb/get_central_object_on_table'
 	try:
             rospy.wait_for_service(srvname,2)
             self.service_get_central_object = rospy.ServiceProxy(srvname, GetCentralObjectOnTable)
@@ -423,6 +428,7 @@ class HandleGuiManipulation(QObject):
 	    rospy.logerr("UC3M database node not found")
 
     def init_data(self):
+	'''
 	model_ids1=self.query_object_list("handle_uc3m_single_view")
 	model_ids2=self.query_object_list("handle_manual")
 	existing_model_ids=[]
@@ -434,6 +440,7 @@ class HandleGuiManipulation(QObject):
 	    print model_id
 	    mymodel=self.get_object_name(model_id)
 	    self.existing_model_names.append(mymodel.name)
+	'''
 
     def eventFilter(self, obj, event):
         if obj is self.win and event.type() == QEvent.Close:

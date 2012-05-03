@@ -25,7 +25,4 @@
   <export>
     <rosgui plugin="${prefix}/handle_gui_manipulation.xml"/>
   </export>
-
 </package>
-<!-- vim: sw=2:ts=2:expandtab
--->
