@@ -348,7 +348,7 @@ class HandleGuiManipulation(QObject):
         self.service_tabletop_collision_map   = None
         self.service_db_get_model_description = None
         self.service_object_detector          = None
-	self.existing_model_names = []
+        self.existing_model_names = []
 
         self_dir        = os.path.dirname(os.path.realpath(__file__));
         self.config_dir = os.path.join(self_dir, '../config')
@@ -368,79 +368,91 @@ class HandleGuiManipulation(QObject):
         # trigger deleteLater for plugin when win is closed
         self.win.installEventFilter(self)
 
-        self.object_chooser = ObjectChooser(self.win, self, "Objects Detected")
-        self.win.contents.layout().addWidget(self.object_chooser)
-        self.object_chooser.draw()
 
         # Bind button clicks
         self.win.btn_detect_objects.pressed.connect(self.detect_objects)
-        self.win.btn_collision_map.pressed.connect(self.process_collision_map)
-        self.win.btn_collision_map.setEnabled(False)
+        self.win.btn_add_collision_map.pressed.connect(self.process_collision_map)
+        self.win.btn_add_collision_map.setEnabled(False)
+        self.win.btn_test_grasp.pressed.connect(self.test_grasp)
+        self.win.btn_test_grasp_quality.pressed.connect(self.test_grasp_quality)
+        self.win.btn_geom_planner.pressed.connect(self.geom_planner_exec)
+        self.win.btn_reconstruct_objects.pressed.connect(self.reconstruct_objects)
+        self.win.btn_gen_grasp.pressed.connect(self.gen_grasp)
+        self.win.btn_gen_grasp_seq.pressed.connect(self.gen_grasp_seq)
+        self.win.btn_rest_pose.pressed.connect(self.grasp_syn_rest_pose)
+        self.win.btn_syn_grasp.pressed.connect(self.grasp_syn_exec)
+        self.win.btn_syn_grasp_cancel.pressed.connect(self.grasp_syn_cancel)
+        self.win.btn_retrack_obj.pressed.connect(self.retrack_obj)
+        self.win.btn_adjust_track.pressed.connect(self.adjust_track)
+        self.win.btn_bias_sensors.pressed.connect(self.bias_sensors)
+        self.win.btn_hold_firmly.pressed.connect(self.hold_more_firmly)
+        self.win.btn_lift.pressed.connect(self.lift)
+        self.win.btn_reset_lift.pressed.connect(self.relift)
 
-	rospy.loginfo("init services")
+        rospy.loginfo("init services")
         self.init_services()
-	rospy.loginfo("init_data")
-	self.init_data()
-	rospy.loginfo("init done")
+        rospy.loginfo("init_data")
+        self.init_data()
+        rospy.loginfo("init done")
 
     def init_services(self):
-	rospy.loginfo("Connecting to services")
+        rospy.loginfo("Connecting to services")
         """Service setup"""
         srvname = '/tabletop_collision_map_processing/tabletop_collision_map_processing'
-	try:
+        try:
             rospy.wait_for_service(srvname,5)
-       	    self.service_tabletop_collision_map = rospy.ServiceProxy(srvname, TabletopCollisionMapProcessing)
-	    rospy.loginfo("Connected to tabletop node")
-	except:
-	    rospy.logerr("Tabletop collision map precessing not found")
+            self.service_tabletop_collision_map = rospy.ServiceProxy(srvname, TabletopCollisionMapProcessing)
+            rospy.loginfo("Connected to tabletop node")
+        except:
+            rospy.logerr("Tabletop collision map precessing not found")
 
- 	srvname = '/uc3m_hdb/objects_database_node/get_model_description'
-	try:
+        srvname = '/uc3m_hdb/objects_database_node/get_model_description'
+        try:
             rospy.wait_for_service(srvname,5)
             self.service_db_get_model_description = rospy.ServiceProxy(srvname, GetModelDescription)
-	    rospy.loginfo("connected to UC3M database")
-	except:
-	    rospy.logerr("UC3M database node not found")
-	    return
+            rospy.loginfo("connected to UC3M database")
+        except:
+            rospy.logerr("UC3M database node not found")
+        return
 
-	# UC3M object tracker
+    # UC3M object tracker
         srvname = '/uc3m_hdb/get_object_pose'
-	try:
+        try:
             rospy.wait_for_service(srvname,2)
             self.service_get_object_pose = rospy.ServiceProxy(srvname, GetObjectPose)
-	except:
-	    rospy.logerr("UC3M objtrack not found")
+        except:
+            rospy.logerr("UC3M objtrack not found")
 
-	# UC3M object detect
-	srvname = '/uc3m_hdb/get_central_object_on_table'
-	try:
+    # UC3M object detect
+        srvname = '/uc3m_hdb/get_central_object_on_table'
+        try:
             rospy.wait_for_service(srvname,2)
             self.service_get_central_object = rospy.ServiceProxy(srvname, GetCentralObjectOnTable)
-	except:
-	    rospy.logerr("UC3M objdetect not found")
+        except:
+            rospy.logerr("UC3M objdetect not found")
 
-	# UC3M list access via standard DB (be careful to use correct DB)
-	srvname = '/uc3m_hdb/objects_database_node/get_model_list'
-	try:
-	    rospy.wait_for_service(srvname,2)
-	    self.service_get_model_list = rospy.ServiceProxy(srvname, GetModelList)
-	except:
-	    rospy.logerr("UC3M database node not found")
+    # UC3M list access via standard DB (be careful to use correct DB)
+        srvname = '/uc3m_hdb/objects_database_node/get_model_list'
+        try:
+            rospy.wait_for_service(srvname,2)
+            self.service_get_model_list = rospy.ServiceProxy(srvname, GetModelList)
+        except:
+            rospy.logerr("UC3M database node not found")
 
     def init_data(self):
-	'''
-	model_ids1=self.query_object_list("handle_uc3m_single_view")
-	model_ids2=self.query_object_list("handle_manual")
-	existing_model_ids=[]
-	existing_model_ids.append(model_ids1)
-	existing_model_ids.append(model_ids2)
-	print existing_model_ids
-	self.existing_model_names=[]
-	for model_id in existing_model_ids:
-	    print model_id
-	    mymodel=self.get_object_name(model_id)
-	    self.existing_model_names.append(mymodel.name)
-	'''
+        '''
+        model_ids1=self.query_object_list("handle_uc3m_single_view")
+        model_ids2=self.query_object_list("handle_manual")
+        existing_model_ids=[]
+        existing_model_ids.append(model_ids1)
+        existing_model_ids.append(model_ids2)
+        print existing_model_ids
+        self.existing_model_names=[]
+        for model_id in existing_model_ids:
+            print model_id
+            mymodel=self.get_object_name(model_id)
+            self.existing_model_names.append(mymodel.name)
+        '''
 
     def eventFilter(self, obj, event):
         if obj is self.win and event.type() == QEvent.Close:
@@ -461,43 +473,97 @@ class HandleGuiManipulation(QObject):
         loginfo(self.objectName()+" restoring settings")
 
     def query_object_list(self,model_set):
-	# handle_uc3m_single_view or handle_manual
-	request=GetModelListRequest()
-	request.model_set=model_set
-	print request
-	try:
-	    response=self.service_get_model_list(request)
-	    print response
-	except rospy.ServiceException, e:
-	    print "Service did not process request: %s" % str(e)
-	return response.model_ids
+    # handle_uc3m_single_view or handle_manual
+        request=GetModelListRequest()
+        request.model_set=model_set
+        print request
+        try:
+            response=self.service_get_model_list(request)
+            print response
+        except rospy.ServiceException, e:
+            print "Service did not process request: %s" % str(e)
+        return response.model_ids
 
     def createPlatformTable(self):
-	ptab=Table()
-	ptab.pose.header.frame_id="/world"
-	ptab.pose.header.time=rospy.Time.now()
-	ptab.pose.pose=Pose(Point(0.25,0.25,1.0),Quaternion(0,0,0,1))
-	ptab.x_min=0.0
-	ptab.x_max=0.5
-	ptab.y_min=0.0
-	ptab.y_max=0.5
-	return ptab
+        ptab=Table()
+        ptab.pose.header.frame_id="/world"
+        ptab.pose.header.time=rospy.Time.now()
+        ptab.pose.pose=Pose(Point(0.25,0.25,1.0),Quaternion(0,0,0,1))
+        ptab.x_min=0.0
+        ptab.x_max=0.5
+        ptab.y_min=0.0
+        ptab.y_max=0.5
+        return ptab
 
     def construct_object(self,new_object_name):
-	request=GetCentralObjectOnTableRequest()
-	request.path=new_object_name
-	#ignore response as we will track the object anyway afterwards
-	self.service_get_central_object(request) 
+        request=GetCentralObjectOnTableRequest()
+        request.path=new_object_name
+        #ignore response as we will track the object anyway afterwards
+        self.service_get_central_object(request) 
+    
+    def test_grasp(self):
+        print "test grasp"
+        
+    def grasp_syn_set_ID(self):
+        self.grasp_syn_id=1.0
+            
+    def grasp_syn_exec(self):
+        print self._syn_id
+    
+    def grasp_syn_rest_pose(self):
+        print "Go to rest pose"
+            
+    def grasp_syn_cancel(self):
+        print "Cancel current grasp synergy"
+        
+    def test_grasp_quality(self):
+        print "testing grasp quality"
+        
+    def lift(self):
+        print "Lift !"
+        
+    def relift(self):
+        print "Relift !"
+        
+    def hold_more_firmly(self):
+        print "Hold more firmly !"
+        
+    def geom_planner_exec(self):
+        print "Geom Planner execution"
+        
+    def geom_planner_set_rot_z(self):
+        self.geom_planner_rot_z=20.0
+        
+    def geom_planner_set_trans_z(self):
+        self.geom_planner_trans_z=10.0
+        
+    def gen_grasp(self):
+        print "gen grasp !"
+
+    def gen_grasp_seq(self):
+        print "gen grasp seq!"
+        
+    def adjust_track(self):
+        print "adjust_track !"
+    
+    def retrack_obj(self):
+        print "retrack obj !"
+        
+    def bias_sensors(self):
+        print "Bias sensors !"
+        
+    def reconstruct_objects(self):
+        print "Reconstruct !"
 
     def detect_objects(self):
         self.found_objects.clear()
         self.win.contents.setCursor(Qt.WaitCursor)
-	detect_obj_req=GetObjectDetectRequest()
-	self.raw_objects=TabletopDetectionResult()
-	self.raw_objects.table=self.createPlatformTable()
+        detect_obj_req=GetObjectDetectRequest()
+        self.raw_objects=TabletopDetectionResult()
+        self.raw_objects.table=self.createPlatformTable()
         try:
             self.raw_objects.clusters.append(self.service_get_object_pose(detect_object_req))
-	    self.raw_objects.result=TabletopDetectionResult.SUCCESS
+            self.raw_objects.result=TabletopDetectionResult.SUCCESS
         except rospy.ServiceException, e:
             print "Service did not process request: %s" % str(e)
 
