@@ -338,6 +338,8 @@ class HandleGuiManipulation(QObject):
         self.geom_planner_rot_z=20.0
         self.geom_planner_trans_z=0.01
         self.grasp_syn_ID=8
+        self.tflistener = tf.TransformListener()
+        self.draw_functions = draw_functions.DrawFunctions('grasp_markers')
 
         self_dir        = os.path.dirname(os.path.realpath(__file__));
         self.config_dir = os.path.join(self_dir, '../config')
@@ -545,6 +547,16 @@ class HandleGuiManipulation(QObject):
             rospy.logerr("error when calling find_cluster_bounding_box: %s" % e)
             return 0
         if not myres.error_code:
+            self.tflistener.waitForTransform("/world", "/camera_rgb_frame", myres.pose.header.stamp, rospy.Duration.from_sec(4.0))
+            newpose=self.tflistener.transformPose("/world",myres.pose)
+            # store new position (but not orientation as the axis is z up in kinect frame)
+            myres.pose.pose.position=newpose.pose.position
+            box_ranges = [[-myres.box_dims.x / 2, -myres.box_dims.y / 2, -myres.box_dims.z / 2],
+                      [myres.box_dims.x / 2, myres.box_dims.y / 2, myres.box_dims.z / 2]]
+            box_mat = pose_to_mat(myres.pose.pose)
+            self.draw_functions.draw_rviz_box(box_mat, box_ranges, '/world',
+                                          ns='bounding box',
+                                          color=[0, 0, 1], opaque=0.25, duration=60)
             return (myres.pose, myres.box_dims)
         else:
             return (None, None)
@@ -560,7 +572,7 @@ class HandleGuiManipulation(QObject):
         # Sends the goal to the action server.
         self.syn_client.send_goal(goal)  
         # Waits for the server to finish performing the 
-        #actionfinished=syn_client.wait_for_result(rospy.Duration(30.0))
+        #actionfinished=syn_client.wait_for_result(rospy.Duration.from_sec(30.0))
         
         #if(actionfinished):
         #    rospy.loginfo("action finished")
@@ -649,7 +661,7 @@ class HandleGuiManipulation(QObject):
         myrequest.tracked_object.pose=PoseStamped()
         myrequest.tracked_object.pose.header.frame_id="world"
         myrequest.tracked_object.pose.header.stamp=rospy.Time.now()
-        myrequest.tracked_object.pose.pose=Pose(Point(0.58,0.20,0.929),Quaternion(0,0,0,1))
+        myrequest.tracked_object.pose.pose=Pose(self.obj_position,Quaternion(0,0,0,1))
         myrequest.tracked_object.confidence=1
         myrequest.tracked_object.detector_name="uc3m"
         self.service_set_tracked_object(myrequest)
@@ -670,7 +682,9 @@ class HandleGuiManipulation(QObject):
 
         if self.raw_objects != None:
             self.bbox=self.call_find_cluster_bounding_box(self.raw_objects.clusters[0])
-            print self.bbox
+            #print self.bbox
+            self.obj_position=self.bbox[0].pose.position
+            self.set_tracker()
             self.win.btn_add_collision_map.setEnabled(True)
         # TODO: Should really do this with SIGNALs and SLOTs.
         self.win.contents.setCursor(Qt.ArrowCursor)
