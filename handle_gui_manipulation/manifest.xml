@@ -19,8 +19,10 @@
   <depend package="object_manipulator"/>
   <depend package="actionlib"/>
   <depend package="control_msgs"/>
+  <depend package="sr_utilities"/>
   <depend package="uc3m_msgs" />
-  <depend package="uc3m_msgs" />
+  <depend package="synergy_grasp_msgs" />
+  <depend package="geometric_planner_msgs" />
   <export>
     <rosgui plugin="${prefix}/handle_gui_manipulation.xml"/>
   </export>

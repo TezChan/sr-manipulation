@@ -16,19 +16,22 @@ from tabletop_object_detector.msg import TabletopDetectionResult, Table
 from tabletop_collision_map_processing.srv import TabletopCollisionMapProcessing
 from household_objects_database_msgs.srv import GetModelDescription,GetModelList, GetModelListRequest
 import object_manipulator.draw_functions as draw_functions
-from object_manipulation_msgs.srv import FindClusterBoundingBox, FindClusterBoundingBoxRequest
+from object_manipulation_msgs.srv import FindClusterBoundingBox2, FindClusterBoundingBox2Request, FindClusterBoundingBox2Response
 from object_manipulation_msgs.msg import PickupGoal, PickupAction, PlaceGoal, PlaceAction
 from object_manipulator.convert_functions import *
-from geometry_msgs.msg import Vector3Stamped, PoseStamped, Pose
+from geometry_msgs.msg import Vector3Stamped, PoseStamped, Pose, Vector3, Point, Twist, Quaternion
 import actionlib
 from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray
+from synergy_grasp_msgs.msg import SynergyGraspAction, SynergyGraspGoal
 import control_msgs.msg
 import trajectory_msgs.msg
 from tf import transformations
 import tf
 
 from uc3m_msgs.srv import GetObjectPose, GetObjectPoseRequest, GetObjectPoseResponse
-from uc3m_msgs.srv import GetCentralObjectOnTable, GetCentralObjectOnTableRequest
+from uc3m_msgs.srv import GetCentralObjectOnTable, GetCentralObjectOnTableRequest, getModelbyAcquisition, getModelbyAcquisitionRequest, getModelbyAcquisitionResponse
+from geometric_planner_msgs.srv import execute_in_hand_mvt,  execute_in_hand_mvtRequest, execute_in_hand_mvtResponse
+from sr_utilities.srv import SetTrackedObject, SetTrackedObjectRequest
 
 import yaml
 
@@ -274,24 +277,6 @@ class ObjectChooser(QWidget):
             self.draw_functions.draw_rviz_box(mat, [.01,.01,.01], frame='/fixed', ns='place_'+str(index),
                                               id=1000+index, duration = 90, color=[0.5,0.5,0.0], opaque=1.0 )
 
-    def call_find_cluster_bounding_box(self, cluster):
-        req = FindClusterBoundingBoxRequest()
-        req.cluster = cluster
-        service_name = "find_cluster_bounding_box"
-        rospy.loginfo("waiting for find_cluster_bounding_box service")
-        rospy.wait_for_service(service_name)
-        rospy.loginfo("service found")
-        serv = rospy.ServiceProxy(service_name, FindClusterBoundingBox)
-        try:
-            res = serv(req)
-        except rospy.ServiceException, e:
-            rospy.logerr("error when calling find_cluster_bounding_box: %s" % e)
-            return 0
-        if not res.error_code:
-            return (res.pose, res.box_dims)
-        else:
-            return (None, None)
-
     def refresh_list(self, value=0):
         self.tree.clear()
         first_item = None
@@ -349,6 +334,10 @@ class HandleGuiManipulation(QObject):
         self.service_db_get_model_description = None
         self.service_object_detector          = None
         self.existing_model_names = []
+        self.bbox = (PoseStamped(),Vector3())
+        self.geom_planner_rot_z=20.0
+        self.geom_planner_trans_z=0.01
+        self.grasp_syn_ID=8
 
         self_dir        = os.path.dirname(os.path.realpath(__file__));
         self.config_dir = os.path.join(self_dir, '../config')
@@ -371,7 +360,8 @@ class HandleGuiManipulation(QObject):
 
         # Bind button clicks
         self.win.btn_detect_objects.pressed.connect(self.detect_objects)
-        self.win.btn_add_collision_map.pressed.connect(self.process_collision_map)
+        #self.win.btn_detect_objects.pressed.connect(self.set_tracker)
+        self.win.btn_add_collision_map.pressed.connect(self.add_to_collision_map)
         self.win.btn_add_collision_map.setEnabled(False)
         self.win.btn_test_grasp.pressed.connect(self.test_grasp)
         self.win.btn_test_grasp_quality.pressed.connect(self.test_grasp_quality)
@@ -380,7 +370,7 @@ class HandleGuiManipulation(QObject):
         self.win.btn_gen_grasp.pressed.connect(self.gen_grasp)
         self.win.btn_gen_grasp_seq.pressed.connect(self.gen_grasp_seq)
         self.win.btn_rest_pose.pressed.connect(self.grasp_syn_rest_pose)
-        self.win.btn_syn_grasp.pressed.connect(self.grasp_syn_exec)
+        self.win.btn_syn_grasp.pressed.connect(self.grasp_syn_exec_pose)
         self.win.btn_syn_grasp_cancel.pressed.connect(self.grasp_syn_cancel)
         self.win.btn_retrack_obj.pressed.connect(self.retrack_obj)
         self.win.btn_adjust_track.pressed.connect(self.adjust_track)
@@ -398,61 +388,96 @@ class HandleGuiManipulation(QObject):
     def init_services(self):
         rospy.loginfo("Connecting to services")
         """Service setup"""
+        # ManipStack nodes
         srvname = '/tabletop_collision_map_processing/tabletop_collision_map_processing'
         try:
-            rospy.wait_for_service(srvname,5)
+            rospy.loginfo("Wait for tabletop node")
+            rospy.wait_for_service(srvname,1)
             self.service_tabletop_collision_map = rospy.ServiceProxy(srvname, TabletopCollisionMapProcessing)
-            rospy.loginfo("Connected to tabletop node")
+            rospy.loginfo("OK")
         except:
-            rospy.logerr("Tabletop collision map precessing not found")
+            rospy.logerr("not found")
 
+        # UC3M DB
         srvname = '/uc3m_hdb/objects_database_node/get_model_description'
         try:
-            rospy.wait_for_service(srvname,5)
+            rospy.loginfo("Wait for UC3M database node")
+            rospy.wait_for_service(srvname,1)
             self.service_db_get_model_description = rospy.ServiceProxy(srvname, GetModelDescription)
-            rospy.loginfo("connected to UC3M database")
+            rospy.loginfo("OK")
         except:
-            rospy.logerr("UC3M database node not found")
-        return
+            rospy.logerr("not found")
 
-    # UC3M object tracker
+        # UC3M object tracker
         srvname = '/uc3m_hdb/get_object_pose'
         try:
-            rospy.wait_for_service(srvname,2)
+            rospy.loginfo("Wait for UC3M tracker node")
+            rospy.wait_for_service(srvname,1)
             self.service_get_object_pose = rospy.ServiceProxy(srvname, GetObjectPose)
+            rospy.loginfo("OK")
         except:
-            rospy.logerr("UC3M objtrack not found")
+            rospy.logerr("not found")
 
-    # UC3M object detect
+        # UC3M object detect
         srvname = '/uc3m_hdb/get_central_object_on_table'
         try:
-            rospy.wait_for_service(srvname,2)
+            rospy.loginfo("Wait for UC3M detect node")
+            rospy.wait_for_service(srvname,1)
             self.service_get_central_object = rospy.ServiceProxy(srvname, GetCentralObjectOnTable)
+            rospy.loginfo("OK")
         except:
-            rospy.logerr("UC3M objdetect not found")
+            rospy.logerr("not found")
 
-    # UC3M list access via standard DB (be careful to use correct DB)
+        # UC3M list access via standard DB (be careful to use correct DB)
         srvname = '/uc3m_hdb/objects_database_node/get_model_list'
         try:
-            rospy.wait_for_service(srvname,2)
+            rospy.loginfo("Wait for UC3M standard database node")
+            rospy.wait_for_service(srvname,1)
             self.service_get_model_list = rospy.ServiceProxy(srvname, GetModelList)
+            rospy.loginfo("OK")
         except:
-            rospy.logerr("UC3M database node not found")
+            rospy.logerr("not found")
+            
+        # UC3M obj list access via their DB 
+        srvname = '/uc3m_hdb/get_list_by_acquisition_method'
+        try:
+            rospy.loginfo("Wait for UC3M get model by acquisition service")
+            rospy.wait_for_service(srvname,1)
+            self.service_get_model_by_acquisition = rospy.ServiceProxy(srvname, getModelbyAcquisition)
+            rospy.loginfo("OK")
+        except:
+            rospy.logerr("not found")
+            
+        # UPMC fake tracker
+        srvname = '/fake_tracker/set_tracked_object'
+        try:
+            rospy.loginfo("Wait for UPMC tracker")
+            rospy.wait_for_service(srvname,1)
+            self.service_set_tracked_object = rospy.ServiceProxy(srvname, SetTrackedObject)
+            rospy.loginfo("OK")
+        except:
+            rospy.logerr("not found")
+            
+         # UPMC geom planner
+        srvname = '/execute_in_hand_mvt'
+        try:
+            rospy.loginfo("Wait for UPMC geom planner")
+            rospy.wait_for_service(srvname,1)
+            self.service_geom_planner_exec = rospy.ServiceProxy(srvname, execute_in_hand_mvt)
+            rospy.loginfo("OK")
+        except:
+            rospy.logerr("not found")
 
     def init_data(self):
-        '''
         model_ids1=self.query_object_list("handle_uc3m_single_view")
         model_ids2=self.query_object_list("handle_manual")
         existing_model_ids=[]
-        existing_model_ids.append(model_ids1)
-        existing_model_ids.append(model_ids2)
-        print existing_model_ids
+        existing_model_ids+=model_ids1
+        existing_model_ids+=model_ids2
         self.existing_model_names=[]
         for model_id in existing_model_ids:
-            print model_id
             mymodel=self.get_object_name(model_id)
-            self.existing_model_names.append(mymodel.name)
-        '''
+            self.existing_model_names.append(mymodel.name)  
 
     def eventFilter(self, obj, event):
         if obj is self.win and event.type() == QEvent.Close:
@@ -472,14 +497,12 @@ class HandleGuiManipulation(QObject):
     def restore_settings(self, global_settings, perspective_settings):
         loginfo(self.objectName()+" restoring settings")
 
-    def query_object_list(self,model_set):
-    # handle_uc3m_single_view or handle_manual
-        request=GetModelListRequest()
-        request.model_set=model_set
-        print request
+    def query_object_list(self,aq_method):
+        # handle_uc3m_single_view or handle_manual
+        request=getModelbyAcquisitionRequest()
+        request.acquisition_method=aq_method
         try:
-            response=self.service_get_model_list(request)
-            print response
+            response=self.service_get_model_by_acquisition(request)
         except rospy.ServiceException, e:
             print "Service did not process request: %s" % str(e)
         return response.model_ids
@@ -487,7 +510,7 @@ class HandleGuiManipulation(QObject):
     def createPlatformTable(self):
         ptab=Table()
         ptab.pose.header.frame_id="/world"
-        ptab.pose.header.time=rospy.Time.now()
+        ptab.pose.header.stamp=rospy.Time.now()
         ptab.pose.pose=Pose(Point(0.25,0.25,1.0),Quaternion(0,0,0,1))
         ptab.x_min=0.0
         ptab.x_max=0.5
@@ -500,6 +523,25 @@ class HandleGuiManipulation(QObject):
         request.path=new_object_name
         #ignore response as we will track the object anyway afterwards
         self.service_get_central_object(request) 
+ 
+    def call_find_cluster_bounding_box(self, cluster):
+        
+        req = FindClusterBoundingBox2Request()
+        req.cluster = cluster
+        service_name = "find_cluster_bounding_box2"
+        rospy.loginfo("waiting for find_cluster_bounding_box service")
+        rospy.wait_for_service(service_name)
+        rospy.loginfo("service found")
+        serv = rospy.ServiceProxy(service_name, FindClusterBoundingBox2)
+        try:
+            myres = serv(req)
+        except rospy.ServiceException, e:
+            rospy.logerr("error when calling find_cluster_bounding_box: %s" % e)
+            return 0
+        if not myres.error_code:
+            return (myres.pose, myres.box_dims)
+        else:
+            return (None, None)
     
     def test_grasp(self):
         print "test grasp"
@@ -507,14 +549,55 @@ class HandleGuiManipulation(QObject):
     def grasp_syn_set_ID(self):
         self.grasp_syn_id=1.0
             
-    def grasp_syn_exec(self):
-        print self._syn_id
+    def grasp_syn_exec(self,goal):
+        print self.grasp_syn_ID
+        
+        syn_client = actionlib.SimpleActionClient('synergy_grasp', SynergyGraspAction)
+        
+        # Waits until the action server has started up and started
+        # listening for goals.
+        syn_client.wait_for_server()
+        
+        # Sends the goal to the action server.
+        syn_client.send_goal(goal)  
+        # Waits for the server to finish performing the 
+        actionfinished=syn_client.wait_for_result(rospy.Duration(30.0))
+        
+        if(actionfinished):
+            rospy.loginfo("action finished")
+        else:
+            rospy.loginfo("action timedout")
+        # Prints out the result of executing the action
+        return client.get_result() 
     
     def grasp_syn_rest_pose(self):
         print "Go to rest pose"
+         # Creates a goal to send to the action server.
+        goal = SynergyGraspGoal()
+        goal.grasp_class_name="Pregrasp"
+        goal.grasp_class_number=33
+        self.grasp_syn_exec(goal)
+        
+    def grasp_syn_exec_pose(self):
+        print "Go to pose"
+         # Creates a goal to send to the action server.
+        goal = SynergyGraspGoal()
+        goal.grasp_class_name="Palmar pinch"
+        goal.grasp_class_number=8
+        
+        #random data because not used yet
+        goal.grasp_parameters.append(0.0)
+        goal.grasp_parameters.append(0.5)
+        goal.grasp_parameters.append(1.0)
+        goal.grasp_parameters.append(0.5)
+        goal.grasp_parameters.append(0.0)
+        self.grasp_syn_exec(goal)
             
     def grasp_syn_cancel(self):
         print "Cancel current grasp synergy"
+        cancel_goal=GoalID()
+        cancelpub = rospy.Publisher("/synergy_grasp/cancel", GoalID)
+        cancelpup.publish(cancel_goal)
         
     def test_grasp_quality(self):
         print "testing grasp quality"
@@ -530,12 +613,18 @@ class HandleGuiManipulation(QObject):
         
     def geom_planner_exec(self):
         print "Geom Planner execution"
+        myrequest=execute_in_hand_mvtRequest()
+        myrequest.desired_in_hand_mvt.model_id=8881
+        #myrequest.desired_in_hand_mvt.movement=Twist(Vector3(0,0,0),Vector3(0,0,self.geom_planner_rot_z))
+        myrequest.desired_in_hand_mvt.movement=Twist(Vector3(0,0,self.geom_planner_trans_z),Vector3(0,0,0))
+        myrequest.desired_in_hand_mvt.steps=2
+        self.service_geom_planner_exec(myrequest)        
         
     def geom_planner_set_rot_z(self):
         self.geom_planner_rot_z=20.0
         
     def geom_planner_set_trans_z(self):
-        self.geom_planner_trans_z=10.0
+        self.geom_planner_trans_z=0.01
         
     def gen_grasp(self):
         print "gen grasp !"
@@ -555,19 +644,39 @@ class HandleGuiManipulation(QObject):
     def reconstruct_objects(self):
         print "Reconstruct !"
 
+    def set_tracker(self):
+        myrequest=SetTrackedObjectRequest()
+        myrequest.tracked_object.model_id=8881
+        myrequest.tracked_object.pose=PoseStamped()
+        myrequest.tracked_object.pose.header.frame_id="world"
+        myrequest.tracked_object.pose.header.stamp=rospy.Time.now()
+        myrequest.tracked_object.pose.pose=Pose(Point(0.58,0.20,0.929),Quaternion(0,0,0,1))
+        myrequest.tracked_object.confidence=1
+        myrequest.tracked_object.detector_name="uc3m"
+        self.service_set_tracked_object(myrequest)
+
     def detect_objects(self):
         self.found_objects.clear()
         self.win.contents.setCursor(Qt.WaitCursor)
-        detect_obj_req=GetObjectDetectRequest()
+        detect_obj_req=GetObjectPoseRequest()
         self.raw_objects=TabletopDetectionResult()
         self.raw_objects.table=self.createPlatformTable()
         try:
-            self.raw_objects.clusters.append(self.service_get_object_pose(detect_object_req))
+            myresponse=self.service_get_object_pose(detect_obj_req)
+            #print "detect",myresponse
+            self.raw_objects.clusters.append(myresponse.object_point_cloud)
             self.raw_objects.result=TabletopDetectionResult.SUCCESS
         except rospy.ServiceException, e:
             print "Service did not process request: %s" % str(e)
 
-        print self.raw_objects
+        if self.raw_objects != None:
+            self.bbox=self.call_find_cluster_bounding_box(self.raw_objects.clusters[0])
+            print self.bbox
+            self.win.btn_add_collision_map.setEnabled(True)
+        # TODO: Should really do this with SIGNALs and SLOTs.
+        self.win.contents.setCursor(Qt.ArrowCursor)
+        
+    def add_to_collision_map(self):
         # Take a new collision map + add the detected objects to the collision
         # map and get graspable objects from them
         tabletop_collision_map_res = self.process_collision_map()
@@ -587,11 +696,6 @@ class HandleGuiManipulation(QObject):
 
                self.found_objects[obj_tmp.model_description.name] = obj_tmp
 
-        if self.raw_objects != None:
-           self.win.btn_collision_map.setEnabled(True)
-        # TODO: Should really do this with SIGNALs and SLOTs.
-        self.object_chooser.refresh_list()
-        self.win.contents.setCursor(Qt.ArrowCursor)
 
     def process_collision_map(self):
         res = 0
