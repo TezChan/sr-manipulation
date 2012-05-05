@@ -467,6 +467,12 @@ class HandleGuiManipulation(QObject):
             rospy.loginfo("OK")
         except:
             rospy.logerr("not found")
+            
+        self.syn_client = actionlib.SimpleActionClient('synergy_grasp', SynergyGraspAction)
+        
+        # Waits until the action server has started up and started
+        # listening for goals.
+        self.syn_client.wait_for_server()
 
     def init_data(self):
         model_ids1=self.query_object_list("handle_uc3m_single_view")
@@ -551,24 +557,17 @@ class HandleGuiManipulation(QObject):
             
     def grasp_syn_exec(self,goal):
         print self.grasp_syn_ID
-        
-        syn_client = actionlib.SimpleActionClient('synergy_grasp', SynergyGraspAction)
-        
-        # Waits until the action server has started up and started
-        # listening for goals.
-        syn_client.wait_for_server()
-        
         # Sends the goal to the action server.
-        syn_client.send_goal(goal)  
+        self.syn_client.send_goal(goal)  
         # Waits for the server to finish performing the 
-        actionfinished=syn_client.wait_for_result(rospy.Duration(30.0))
+        #actionfinished=syn_client.wait_for_result(rospy.Duration(30.0))
         
-        if(actionfinished):
-            rospy.loginfo("action finished")
-        else:
-            rospy.loginfo("action timedout")
+        #if(actionfinished):
+        #    rospy.loginfo("action finished")
+        #else:
+        #    rospy.loginfo("action timedout")
         # Prints out the result of executing the action
-        return client.get_result() 
+        #return self.syn_client.get_result() 
     
     def grasp_syn_rest_pose(self):
         print "Go to rest pose"
@@ -597,7 +596,7 @@ class HandleGuiManipulation(QObject):
         print "Cancel current grasp synergy"
         cancel_goal=GoalID()
         cancelpub = rospy.Publisher("/synergy_grasp/cancel", GoalID)
-        cancelpup.publish(cancel_goal)
+        cancelpub.publish(cancel_goal)
         
     def test_grasp_quality(self):
         print "testing grasp quality"
