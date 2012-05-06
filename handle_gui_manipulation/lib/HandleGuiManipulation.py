@@ -666,9 +666,24 @@ class HandleGuiManipulation(QObject):
         
     def adjust_track(self):
         print "adjust_track !"
+        myrequest=PoseRectify()
+        if self.pcloud_palm!=[]:
+            myrequest.point_cloud_in=self.pcloud_palm
+            translation=self.service_rectify_pose(myrequest)
+            self.obj_position.x+=translation.x
+            self.obj_position.y+=translation.y
+            self.obj_position.z+=translation.z
+            self.set_tracker()
     
     def retrack_obj(self):
         print "retrack obj !"
+        if self.detect_objects():
+            #transform pointcloud into 
+            pcloud=self.raw_objects.clusters[0]
+            self.tflistener.waitForTransform("/palm", "/camera_rgb_frame", pcloud.header.stamp, rospy.Duration.from_sec(1.0))
+            self.pcloud_palm=self.tflistener.transformPointCloud("/palm",pcloud)
+        else:
+            self.pcloud_palm=PointCloud()
         
     def bias_sensors(self):
         print "Bias sensors !"
@@ -703,6 +718,7 @@ class HandleGuiManipulation(QObject):
             self.raw_objects.result=TabletopDetectionResult.SUCCESS
         except rospy.ServiceException, e:
             print "Service did not process request: %s" % str(e)
+            return False
 
         if self.raw_objects != None:
             self.bbox=self.call_find_cluster_bounding_box(self.raw_objects.clusters[0])
@@ -710,8 +726,11 @@ class HandleGuiManipulation(QObject):
             self.obj_position=self.bbox[0].pose.position
             self.set_tracker()
             self.win.btn_add_collision_map.setEnabled(True)
+        else:
+            return False
         # TODO: Should really do this with SIGNALs and SLOTs.
         self.win.contents.setCursor(Qt.ArrowCursor)
+        return True
         
     def add_to_collision_map(self):
         # Take a new collision map + add the detected objects to the collision
@@ -730,7 +749,6 @@ class HandleGuiManipulation(QObject):
                else:
                    model_index = -1
                obj_tmp.model_description = self.get_object_name(model_index)
-
                self.found_objects[obj_tmp.model_description.name] = obj_tmp
 
 

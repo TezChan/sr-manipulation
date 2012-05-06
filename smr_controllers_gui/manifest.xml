@@ -1,0 +1,22 @@
+<package>
+  <description brief="smr_controllers_gui">
+
+     smr_controllers_gui -plugin for smr controllers setting.
+
+  </description>
+  <author>Guillaume WALCK (UPMC)</author>
+  <license></license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/smr_controllers_gui</url>
+  <depend package="rospy"/>
+  <depend package="rosgui"/>
+  <depend package="rosgui_rospy"/>
+  <depend package="rosgui_roscpp"/>
+  <depend package="rostopic"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="smr_fingertip_controllers_msgs" />
+  <export>
+    <rosgui plugin="${prefix}/smr_controllers_gui.xml"/>
+  </export>
+</package>
