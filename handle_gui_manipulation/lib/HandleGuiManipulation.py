@@ -28,6 +28,7 @@ import trajectory_msgs.msg
 from tf import transformations
 import tf
 
+from kcl_msgs.srv import KCL_Sensor_Bias,KCL_Sensor_BiasRequest
 from uc3m_msgs.srv import GetObjectPose, GetObjectPoseRequest, GetObjectPoseResponse
 from uc3m_msgs.srv import GetCentralObjectOnTable, GetCentralObjectOnTableRequest, getModelbyAcquisition, getModelbyAcquisitionRequest, getModelbyAcquisitionResponse
 from geometric_planner_msgs.srv import execute_in_hand_mvt,  execute_in_hand_mvtRequest, execute_in_hand_mvtResponse
@@ -388,6 +389,16 @@ class HandleGuiManipulation(QObject):
         rospy.loginfo("init done")
 
     def init_services(self):
+        self.service_tabletop_collision_map=None
+        self.service_get_model_by_acquisition=None
+        self.service_db_get_model_description =None
+        self.service_get_object_pose=None
+        self.service_get_central_object=None
+        self.service_set_tracked_object=None
+        self.service_bias_sensors=None
+        self.service_get_model_list=None
+        self.service_geom_planner_exec=None
+        
         rospy.loginfo("Connecting to services")
         """Service setup"""
         # ManipStack nodes
@@ -460,7 +471,7 @@ class HandleGuiManipulation(QObject):
         except:
             rospy.logerr("not found")
             
-         # UPMC geom planner
+        # UPMC geom planner
         srvname = '/execute_in_hand_mvt'
         try:
             rospy.loginfo("Wait for UPMC geom planner")
@@ -470,22 +481,29 @@ class HandleGuiManipulation(QObject):
         except:
             rospy.logerr("not found")
             
+        # UPMC geom planner
+        srvname = '/sensor_bias'
+        try:
+            rospy.loginfo("Wait for KCL sensors")
+            rospy.wait_for_service(srvname,1)
+            self.service_bias_sensors = rospy.ServiceProxy(srvname, KCL_Sensor_Bias)
+            rospy.loginfo("OK")
+        except:
+            rospy.logerr("not found")
+            
         self.syn_client = actionlib.SimpleActionClient('synergy_grasp', SynergyGraspAction)
-        
-        # Waits until the action server has started up and started
-        # listening for goals.
-        self.syn_client.wait_for_server()
 
     def init_data(self):
-        model_ids1=self.query_object_list("handle_uc3m_single_view")
-        model_ids2=self.query_object_list("handle_manual")
-        existing_model_ids=[]
-        existing_model_ids+=model_ids1
-        existing_model_ids+=model_ids2
-        self.existing_model_names=[]
-        for model_id in existing_model_ids:
-            mymodel=self.get_object_name(model_id)
-            self.existing_model_names.append(mymodel.name)  
+        if self.service_get_model_by_acquisition!=None:
+            model_ids1=self.query_object_list("handle_uc3m_single_view")
+            model_ids2=self.query_object_list("handle_manual")
+            existing_model_ids=[]
+            existing_model_ids+=model_ids1
+            existing_model_ids+=model_ids2
+            self.existing_model_names=[]
+            for model_id in existing_model_ids:
+                mymodel=self.get_object_name(model_id)
+                self.existing_model_names.append(mymodel.name)  
 
     def eventFilter(self, obj, event):
         if obj is self.win and event.type() == QEvent.Close:
@@ -568,6 +586,9 @@ class HandleGuiManipulation(QObject):
         self.grasp_syn_id=1.0
             
     def grasp_syn_exec(self,goal):
+		# Waits until the action server has started up and started
+        # listening for goals.
+        self.syn_client.wait_for_server()
         print self.grasp_syn_ID
         # Sends the goal to the action server.
         self.syn_client.send_goal(goal)  
@@ -651,6 +672,9 @@ class HandleGuiManipulation(QObject):
         
     def bias_sensors(self):
         print "Bias sensors !"
+        myrequest=KCL_Sensor_BiasRequest()
+        myrequest.id=[1,2,3,4,5]
+        self.service_bias_sensors(myrequest)
         
     def reconstruct_objects(self):
         print "Reconstruct !"
