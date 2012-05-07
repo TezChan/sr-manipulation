@@ -389,12 +389,12 @@
       <x>0</x>
       <y>280</y>
       <width>621</width>
-      <height>62</height>
+      <height>197</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout_2">
-     <item row="0" column="0" rowspan="2">
-      <widget class="QPushButton" name="btn_geom_planner">
+     <item row="0" column="1">
+      <widget class="QPushButton" name="btn_geom_planner_rot_z20">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -405,75 +405,57 @@
         <string>Run object detection and fill table with detected objects. Double click object in table to attempt pickup.</string>
        </property>
        <property name="text">
-        <string>Geom Planner</string>
+        <string>Geom Planner RotZ +20</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="2">
-      <widget class="QLineEdit" name="rot_z_value">
-       <property name="enabled">
-        <bool>true</bool>
+     <item row="4" column="1">
+      <widget class="QPushButton" name="btn_geom_planner_trans_z10">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
-       <property name="frame">
-        <bool>true</bool>
+       <property name="toolTip">
+        <string>Run object detection and fill table with detected objects. Double click object in table to attempt pickup.</string>
        </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QLineEdit" name="trans_z_value">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="frame">
-        <bool>true</bool>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QRadioButton" name="radbtn_trans_z">
        <property name="text">
-        <string>Trans Z</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QRadioButton" name="radbtn_rot_z">
-       <property name="text">
-        <string>Rot Z</string>
+        <string>Geom Planner TransZ 10</string>
        </property>
       </widget>
      </item>
      <item row="0" column="3">
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
+      <widget class="QTextEdit" name="geom_posY"/>
      </item>
-     <item row="1" column="3">
-      <spacer name="horizontalSpacer_3">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="btn_geom_planner_rot_zm20">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
+       <property name="toolTip">
+        <string>Run object detection and fill table with detected objects. Double click object in table to attempt pickup.</string>
        </property>
-      </spacer>
+       <property name="text">
+        <string>Geom Planner RotZ -20</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QTextEdit" name="geom_posX"/>
+     </item>
+     <item row="0" column="4" rowspan="4">
+      <widget class="QCheckBox" name="geom_checkbox">
+       <property name="text">
+        <string>Test</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>

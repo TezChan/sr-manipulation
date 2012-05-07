@@ -17,7 +17,7 @@ from tabletop_collision_map_processing.srv import TabletopCollisionMapProcessing
 from household_objects_database_msgs.srv import GetModelDescription,GetModelList, GetModelListRequest
 import object_manipulator.draw_functions as draw_functions
 from object_manipulation_msgs.srv import FindClusterBoundingBox, FindClusterBoundingBoxRequest, FindClusterBoundingBoxResponse
-from object_manipulation_msgs.msg import PickupGoal, PickupAction, PlaceGoal, PlaceAction
+from object_manipulation_msgs.msg import PickupGoal, PickupAction, PlaceGoal, PlaceAction, GraspPlanningResult, Grasp
 from object_manipulator.convert_functions import *
 from geometry_msgs.msg import Vector3Stamped, PoseStamped, Pose, Vector3, Point, Twist, Quaternion
 import actionlib
@@ -25,6 +25,7 @@ from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray
 from synergy_grasp_msgs.msg import SynergyGraspAction, SynergyGraspGoal
 import control_msgs.msg
 import trajectory_msgs.msg
+from sensor_msgs.msg import PointCloud, JointState
 from tf import transformations
 import tf
 
@@ -34,7 +35,7 @@ from kcl_msgs.srv import KCL_Sensor_Bias,KCL_Sensor_BiasRequest, KCL_PoseRectify
 from uc3m_msgs.srv import GetObjectPose, GetObjectPoseRequest, GetObjectPoseResponse
 from uc3m_msgs.srv import GetCentralObjectOnTable, GetCentralObjectOnTableRequest, getModelbyAcquisition, getModelbyAcquisitionRequest, getModelbyAcquisitionResponse
 from geometric_planner_msgs.srv import execute_in_hand_mvt,  execute_in_hand_mvtRequest, execute_in_hand_mvtResponse
-from sr_utilities.srv import SetTrackedObject, SetTrackedObjectRequest
+from sr_utilities.srv import SetTrackedObject, SetTrackedObjectRequest, GraspRotation, GraspRotationRequest
 
 import yaml
 
@@ -370,7 +371,12 @@ class HandleGuiManipulation(QObject):
         self.win.btn_add_collision_map.setEnabled(False)
         self.win.btn_test_grasp.pressed.connect(self.test_grasp)
         self.win.btn_test_grasp_quality.pressed.connect(self.test_grasp_quality)
-        self.win.btn_geom_planner.pressed.connect(self.geom_planner_exec)
+        #self.win.btn_geom_planner.pressed.connect(self.geom_planner_exec)
+        
+        self.win.btn_geom_planner_rot_z20.pressed.connect(self.geom_planner_exec_rot_z)
+        self.win.btn_geom_planner_rot_zm20.pressed.connect(self.geom_planner_exec_rot_zm)
+        self.win.btn_geom_planner_trans_z10.pressed.connect(self.geom_planner_exec_trans_z)
+        
         self.win.btn_reconstruct_objects.pressed.connect(self.reconstruct_objects)
         self.win.btn_gen_grasp.pressed.connect(self.gen_grasp)
         self.win.btn_gen_grasp_seq.pressed.connect(self.gen_grasp_seq)
@@ -482,8 +488,18 @@ class HandleGuiManipulation(QObject):
         except:
             rospy.logerr("not found")
             
+        # UPMC grasp generator
+        srvname = '/rotation_symetric_grasp_generator'
+        try:
+            rospy.loginfo("Wait for UPMC rot grasp generator")
+            rospy.wait_for_service(srvname,1)
+            self.service_gen_rot_grasp = rospy.ServiceProxy(srvname, GraspRotation)
+            rospy.loginfo("OK")
+        except:
+            rospy.logerr("not found")
+           
         # KCL 
-        srvname = '/sensor_bias'
+        srvname = '/nano17ft/sensor_bias'
         try:
             rospy.loginfo("Wait for KCL sensors")
             rospy.wait_for_service(srvname,1)
@@ -657,21 +673,53 @@ class HandleGuiManipulation(QObject):
         
     def geom_planner_exec(self):
         print "Geom Planner execution"
+        self.obj_position.x=float(self.win.geom_posX.toPlainText())
+        self.obj_position.y=float(self.win.geom_posY.toPlainText())
+        print "Obj Pose:",self.obj_position.x," ,",self.obj_position.y
+        self.set_tracker()
         myrequest=execute_in_hand_mvtRequest()
         myrequest.desired_in_hand_mvt.model_id=8881
         #myrequest.desired_in_hand_mvt.movement=Twist(Vector3(0,0,0),Vector3(0,0,self.geom_planner_rot_z))
-        myrequest.desired_in_hand_mvt.movement=Twist(Vector3(0,0,self.geom_planner_trans_z),Vector3(0,0,0))
-        myrequest.desired_in_hand_mvt.steps=2
+        myrequest.desired_in_hand_mvt.movement=Twist(Vector3(0,0,self.geom_planner_trans_z),Vector3(0,0,self.geom_planner_rot_z))
+        if(self.win.geom_checkbox.isChecked()):
+            mysteps=1
+        else:
+            mysteps=2
+        myrequest.desired_in_hand_mvt.steps=mysteps
         self.service_geom_planner_exec(myrequest)        
         
-    def geom_planner_set_rot_z(self):
+    def geom_planner_exec_rot_z(self):
         self.geom_planner_rot_z=20.0
+        self.geom_planner_trans_z=0
+        self.geom_planner_exec()
         
-    def geom_planner_set_trans_z(self):
+    def geom_planner_exec_rot_zm(self):
+        self.geom_planner_rot_z=-20.0
+        self.geom_planner_trans_z=0
+        self.geom_planner_exec()
+        
+    def geom_planner_exec_trans_z(self):
         self.geom_planner_trans_z=0.01
+        self.geom_planner_rot_z=0.0
+        self.geom_planner_exec()
         
     def gen_grasp(self):
         print "gen grasp !"
+        myrequest=GraspRotationRequest()
+        mygrasp=Grasp()
+        mygrasp.pre_grasp_posture=JointState()
+        
+        mygrasp.pre_grasp_posture.name=['FFJ4', 'FFJ3', 'FFJ0', 'MFJ4', 'MFJ3', 'MFJ0', 'RFJ4', 'RFJ3', 'RFJ0', 'LFJ5', 'LFJ4', 'LFJ3', 'LFJ0', 'THJ5', 'THJ4', 'THJ3', 'THJ2', 'THJ1']
+        mygrasp.pre_grasp_posture.position=[-0.436, 0.005, 0.801, 0.0, 0.015, 0.791, -0.436, 0.005, 0.801, 0.0 , -0.436, 0.0, 0.811, 0.0, 1.309, -0.262, -0.524, 0.248]
+        mygrasp.grasp_posture=mygrasp.pre_grasp_posture
+        mygrasp.grasp_pose=Pose(Point(-0.0645,-0.055,0.19),Quaternion(0.579,0.579,0.405,0.405))
+        mygrasp.success_probability=1.0
+        mygrasp.cluster_rep= True;
+        mygrasp.desired_approach_distance=0.2
+        mygrasp.min_approach_distance=0.1
+        myrequest.input_grasps.grasps.append(mygrasp)
+        myrequest.input_grasps.error_code.value=0
+        self.grasp_list=self.service_gen_rot_grasp(myrequest)       #GraspPlanningResult message as a response
 
     def gen_grasp_seq(self):
         print "gen grasp seq!"
@@ -724,8 +772,13 @@ class HandleGuiManipulation(QObject):
         myrequest.tracked_object.pose.header.frame_id="world"
         myrequest.tracked_object.pose.header.stamp=rospy.Time.now()
         myrequest.tracked_object.pose.pose=Pose(self.obj_position,Quaternion(0,0,0,1))
+        
         myrequest.tracked_object.confidence=1
         myrequest.tracked_object.detector_name="uc3m"
+        
+        self.win.geom_posX.setText(str(self.obj_position.x))
+        self.win.geom_posY.setText(str(self.obj_position.y))
+        
         self.service_set_tracked_object(myrequest)
 
     def detect_objects(self):
@@ -749,6 +802,7 @@ class HandleGuiManipulation(QObject):
             self.bbox=self.call_find_cluster_bounding_box(self.raw_objects.clusters[0])
             #print self.bbox
             self.obj_position=self.bbox[0].pose.position
+            self.obj_position.z-=0.05
             self.set_tracker()
             self.win.btn_add_collision_map.setEnabled(True)
         else:
