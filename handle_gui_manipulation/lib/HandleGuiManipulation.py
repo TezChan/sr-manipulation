@@ -16,7 +16,7 @@ from tabletop_object_detector.msg import TabletopDetectionResult, Table
 from tabletop_collision_map_processing.srv import TabletopCollisionMapProcessing
 from household_objects_database_msgs.srv import GetModelDescription,GetModelList, GetModelListRequest
 import object_manipulator.draw_functions as draw_functions
-from object_manipulation_msgs.srv import FindClusterBoundingBox2, FindClusterBoundingBox2Request, FindClusterBoundingBox2Response
+from object_manipulation_msgs.srv import FindClusterBoundingBox, FindClusterBoundingBoxRequest, FindClusterBoundingBoxResponse
 from object_manipulation_msgs.msg import PickupGoal, PickupAction, PlaceGoal, PlaceAction
 from object_manipulator.convert_functions import *
 from geometry_msgs.msg import Vector3Stamped, PoseStamped, Pose, Vector3, Point, Twist, Quaternion
@@ -381,7 +381,6 @@ class HandleGuiManipulation(QObject):
         self.win.btn_hold_firmly.pressed.connect(self.hold_more_firmly)
         self.win.btn_lift.pressed.connect(self.lift)
         self.win.btn_reset_lift.pressed.connect(self.relift)
-
         rospy.loginfo("init services")
         self.init_services()
         rospy.loginfo("init_data")
@@ -552,13 +551,13 @@ class HandleGuiManipulation(QObject):
  
     def call_find_cluster_bounding_box(self, cluster):
         
-        req = FindClusterBoundingBox2Request()
+        req = FindClusterBoundingBoxRequest()
         req.cluster = cluster
-        service_name = "find_cluster_bounding_box2"
+        service_name = "find_cluster_bounding_box"
         rospy.loginfo("waiting for find_cluster_bounding_box service")
         rospy.wait_for_service(service_name)
         rospy.loginfo("service found")
-        serv = rospy.ServiceProxy(service_name, FindClusterBoundingBox2)
+        serv = rospy.ServiceProxy(service_name, FindClusterBoundingBox)
         try:
             myres = serv(req)
         except rospy.ServiceException, e:
@@ -689,10 +688,15 @@ class HandleGuiManipulation(QObject):
         print "Bias sensors !"
         myrequest=KCL_Sensor_BiasRequest()
         myrequest.id=[1,2,3,4,5]
-        self.service_bias_sensors(myrequest)
-        
+        self.service_bias_sensors(myrequest)		
+		
     def reconstruct_objects(self):
         print "Reconstruct !"
+        #print self.win.reconstruct_objects_name.text()
+        print self.win.textEdit.toPlainText()
+		myrequest=GetCentralObjectOnTableRequest()
+		myrequest.path(str(self.win.textEdit.toPlainText()))
+        self.service_get_central_object(myrequest)
 
     def set_tracker(self):
         myrequest=SetTrackedObjectRequest()
@@ -711,10 +715,12 @@ class HandleGuiManipulation(QObject):
         detect_obj_req=GetObjectPoseRequest()
         self.raw_objects=TabletopDetectionResult()
         self.raw_objects.table=self.createPlatformTable()
+        
         try:
             myresponse=self.service_get_object_pose(detect_obj_req)
             #print "detect",myresponse
             self.raw_objects.clusters.append(myresponse.object_point_cloud)
+            self.raw_objects.cluster_model_indices.append(0)
             self.raw_objects.result=TabletopDetectionResult.SUCCESS
         except rospy.ServiceException, e:
             print "Service did not process request: %s" % str(e)
@@ -756,7 +762,7 @@ class HandleGuiManipulation(QObject):
         res = 0
         try:
             #Args: detection_result reset_collision_models reset_attached_models desired_frame
-            res = self.service_tabletop_collision_map.call(self.raw_objects, True, True, "/fixed")
+            res = self.service_tabletop_collision_map(self.raw_objects, True, True, "/fixed")
         except rospy.ServiceException, e:
             logerr("Service did not process request: %s" % str(e))
 
