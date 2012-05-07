@@ -28,7 +28,9 @@ import trajectory_msgs.msg
 from tf import transformations
 import tf
 
-from kcl_msgs.srv import KCL_Sensor_Bias,KCL_Sensor_BiasRequest
+from std_srvs.srv import Empty,EmptyRequest
+
+from kcl_msgs.srv import KCL_Sensor_Bias,KCL_Sensor_BiasRequest, KCL_PoseRectify, KCL_PoseRectifyRequest
 from uc3m_msgs.srv import GetObjectPose, GetObjectPoseRequest, GetObjectPoseResponse
 from uc3m_msgs.srv import GetCentralObjectOnTable, GetCentralObjectOnTableRequest, getModelbyAcquisition, getModelbyAcquisitionRequest, getModelbyAcquisitionResponse
 from geometric_planner_msgs.srv import execute_in_hand_mvt,  execute_in_hand_mvtRequest, execute_in_hand_mvtResponse
@@ -480,7 +482,7 @@ class HandleGuiManipulation(QObject):
         except:
             rospy.logerr("not found")
             
-        # UPMC geom planner
+        # KCL 
         srvname = '/sensor_bias'
         try:
             rospy.loginfo("Wait for KCL sensors")
@@ -489,6 +491,17 @@ class HandleGuiManipulation(QObject):
             rospy.loginfo("OK")
         except:
             rospy.logerr("not found")
+            
+        # KCL rect
+        srvname = '/rectify_pose_tabletop'
+        try:
+            rospy.loginfo("Wait for KCL pose rect")
+            rospy.wait_for_service(srvname,1)
+            #self.service_rectify_pose = rospy.ServiceProxy(srvname, KCL_PoseRectify)
+            self.service_rectify_pose = rospy.ServiceProxy(srvname, Empty)
+            rospy.loginfo("OK")
+        except:
+            rospy.logerr("not found")    
             
         self.syn_client = actionlib.SimpleActionClient('synergy_grasp', SynergyGraspAction)
 
@@ -585,7 +598,7 @@ class HandleGuiManipulation(QObject):
         self.grasp_syn_id=1.0
             
     def grasp_syn_exec(self,goal):
-		# Waits until the action server has started up and started
+        # Waits until the action server has started up and started
         # listening for goals.
         self.syn_client.wait_for_server()
         print self.grasp_syn_ID
@@ -665,7 +678,8 @@ class HandleGuiManipulation(QObject):
         
     def adjust_track(self):
         print "adjust_track !"
-        myrequest=PoseRectify()
+        '''
+        myrequest=KCL_PoseRectifyRequest()
         if self.pcloud_palm!=[]:
             myrequest.point_cloud_in=self.pcloud_palm
             translation=self.service_rectify_pose(myrequest)
@@ -673,6 +687,9 @@ class HandleGuiManipulation(QObject):
             self.obj_position.y+=translation.y
             self.obj_position.z+=translation.z
             self.set_tracker()
+        '''
+        self.service_rectify_pose()
+    
     
     def retrack_obj(self):
         print "retrack obj !"
@@ -681,6 +698,8 @@ class HandleGuiManipulation(QObject):
             pcloud=self.raw_objects.clusters[0]
             self.tflistener.waitForTransform("/palm", "/camera_rgb_frame", pcloud.header.stamp, rospy.Duration.from_sec(1.0))
             self.pcloud_palm=self.tflistener.transformPointCloud("/palm",pcloud)
+            print self.pcloud_palm.header.frame_id
+            self.pcloud_palm.header.frame_id="/palm"
         else:
             self.pcloud_palm=PointCloud()
         
@@ -688,14 +707,14 @@ class HandleGuiManipulation(QObject):
         print "Bias sensors !"
         myrequest=KCL_Sensor_BiasRequest()
         myrequest.id=[1,2,3,4,5]
-        self.service_bias_sensors(myrequest)		
-		
+        self.service_bias_sensors(myrequest)        
+        
     def reconstruct_objects(self):
         print "Reconstruct !"
         #print self.win.reconstruct_objects_name.text()
         print self.win.textEdit.toPlainText()
-		myrequest=GetCentralObjectOnTableRequest()
-		myrequest.path(str(self.win.textEdit.toPlainText()))
+        myrequest=GetCentralObjectOnTableRequest()
+        myrequest.path(str(self.win.textEdit.toPlainText()))
         self.service_get_central_object(myrequest)
 
     def set_tracker(self):
