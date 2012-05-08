@@ -31,7 +31,7 @@ import tf
 
 from std_srvs.srv import Empty,EmptyRequest
 
-from kcl_msgs.srv import KCL_Sensor_Bias,KCL_Sensor_BiasRequest, KCL_PoseRectify, KCL_PoseRectifyRequest
+from kcl_msgs.srv import KCL_Sensor_Bias,KCL_Sensor_BiasRequest, KCL_PoseRectifyEReq, KCL_PoseRectifyEReqRequest
 from uc3m_msgs.srv import GetObjectPose, GetObjectPoseRequest, GetObjectPoseResponse
 from uc3m_msgs.srv import GetCentralObjectOnTable, GetCentralObjectOnTableRequest, getModelbyAcquisition, getModelbyAcquisitionRequest, getModelbyAcquisitionResponse
 from geometric_planner_msgs.srv import execute_in_hand_mvt,  execute_in_hand_mvtRequest, execute_in_hand_mvtResponse
@@ -513,8 +513,8 @@ class HandleGuiManipulation(QObject):
         try:
             rospy.loginfo("Wait for KCL pose rect")
             rospy.wait_for_service(srvname,1)
-            #self.service_rectify_pose = rospy.ServiceProxy(srvname, KCL_PoseRectify)
-            self.service_rectify_pose = rospy.ServiceProxy(srvname, Empty)
+            self.service_rectify_pose = rospy.ServiceProxy(srvname, KCL_PoseRectifyEReq)
+            #self.service_rectify_pose = rospy.ServiceProxy(srvname, Empty)
             rospy.loginfo("OK")
         except:
             rospy.logerr("not found")    
