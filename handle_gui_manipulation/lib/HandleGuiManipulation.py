@@ -329,6 +329,7 @@ class HandleGuiManipulation(QObject):
         super(HandleGuiManipulation, self).__init__(parent)
 
         self.setObjectName('HandleGuiManipulation')
+        self.srv_wait_time = 0.5
         # Set by call to process_collision_map()
         self.collision_support_surface_name = None
         self.raw_objects            = None
@@ -341,13 +342,18 @@ class HandleGuiManipulation(QObject):
         self.bbox = (PoseStamped(),Vector3())
         self.geom_planner_rot_z=20.0
         self.geom_planner_trans_z=0.01
-        self.grasp_syn_ID=8
+        self.grasp_syn_id=8
         self.tflistener = tf.TransformListener()
         self.draw_functions = draw_functions.DrawFunctions('grasp_markers')
 
+        self.graspsLabel = ["Large diameter","Small diameter","Medium Wrap","Abducted Thumb","Light tool","Prismatic 4 fingers","Prismatic 3 fingers","Prismatic 2 fingers","Palmar Pinch","Power Disk","Power Sphere","Precision Disk","Precision Sphere","Tripod","Fixed Hook","Lateral","Index Finger Extension","Extension type","Distal type","Writing Tripod","Tripod Variation","Parallel Extension","Adduction Grip","Tip Pinch","Lateral Tripod","Sphere 4 fingers","Quadpd","Sphere 3 Fingers","Stick","Palmar","Ring","Ventral","Inferior Pincer","Flat","Halt","Empty","Inactive","Fist","Cup","Cage"]
+        self.grasp_images = []
+        
         self_dir        = os.path.dirname(os.path.realpath(__file__));
         self.config_dir = os.path.join(self_dir, '../config')
         self.ui_dir     = os.path.join(self_dir, '../ui')
+        
+        self.init_images()
 
         # UI setup
         ui_file = os.path.join(self.ui_dir, 'HandleGuiManipulation.ui')
@@ -363,32 +369,56 @@ class HandleGuiManipulation(QObject):
         # trigger deleteLater for plugin when win is closed
         self.win.installEventFilter(self)
 
+        # initialize grasp combo boxes with grasp names
+        for i in range(len(self.graspsLabel)):
+            self.win.syn_combobox.addItem(str(i)+":"+self.graspsLabel[i])
+        
+        self_dir        = os.path.dirname(os.path.realpath(__file__));
 
         # Bind button clicks
         self.win.btn_detect_objects.pressed.connect(self.detect_objects)
+        self.win.btn_detect_objects.setEnabled(False);
         #self.win.btn_detect_objects.pressed.connect(self.set_tracker)
         self.win.btn_add_collision_map.pressed.connect(self.add_to_collision_map)
         self.win.btn_add_collision_map.setEnabled(False)
         self.win.btn_test_grasp.pressed.connect(self.test_grasp)
+        self.win.btn_test_grasp.setEnabled(False)
         self.win.btn_test_grasp_quality.pressed.connect(self.test_grasp_quality)
+        self.win.btn_test_grasp_quality.setEnabled(False)
         #self.win.btn_geom_planner.pressed.connect(self.geom_planner_exec)
-        
         self.win.btn_geom_planner_rot_z20.pressed.connect(self.geom_planner_exec_rot_z)
         self.win.btn_geom_planner_rot_zm20.pressed.connect(self.geom_planner_exec_rot_zm)
-        self.win.btn_geom_planner_trans_z10.pressed.connect(self.geom_planner_exec_trans_z)
-        
+        self.win.btn_geom_planner_trans_z10.pressed.connect(self.geom_planner_exec_trans_z)    
+        self.win.btn_geom_planner_rot_z20.setEnabled(False)
+        self.win.btn_geom_planner_rot_zm20.setEnabled(False)
+        self.win.btn_geom_planner_trans_z10.setEnabled(False)
         self.win.btn_reconstruct_objects.pressed.connect(self.reconstruct_objects)
+        self.win.btn_reconstruct_objects.setEnabled(False)
         self.win.btn_gen_grasp.pressed.connect(self.gen_grasp)
+        self.win.btn_gen_grasp.setEnabled(False)
         self.win.btn_gen_grasp_seq.pressed.connect(self.gen_grasp_seq)
+        self.win.btn_gen_grasp_seq.setEnabled(False)
         self.win.btn_rest_pose.pressed.connect(self.grasp_syn_rest_pose)
+        self.win.btn_rest_pose.setEnabled(False)
         self.win.btn_syn_grasp.pressed.connect(self.grasp_syn_exec_pose)
+        self.win.btn_syn_grasp.setEnabled(False)
         self.win.btn_syn_grasp_cancel.pressed.connect(self.grasp_syn_cancel)
+        self.win.btn_syn_grasp_cancel.setEnabled(False)
         self.win.btn_retrack_obj.pressed.connect(self.retrack_obj)
+        self.win.btn_retrack_obj.setEnabled(False)
         self.win.btn_adjust_track.pressed.connect(self.adjust_track)
+        self.win.btn_adjust_track.setEnabled(False)
         self.win.btn_bias_sensors.pressed.connect(self.bias_sensors)
+        self.win.btn_bias_sensors.setEnabled(False)
         self.win.btn_hold_firmly.pressed.connect(self.hold_more_firmly)
+        self.win.btn_hold_firmly.setEnabled(False)
         self.win.btn_lift.pressed.connect(self.lift)
+        self.win.btn_lift.setEnabled(False)
         self.win.btn_reset_lift.pressed.connect(self.relift)
+        self.win.btn_reset_lift.setEnabled(False)
+
+        self.win.syn_combobox.currentIndexChanged.connect(self.on_syn_combo_change)
+        self.win.syn_combobox.setCurrentIndex(self.grasp_syn_id)
         rospy.loginfo("init services")
         self.init_services()
         rospy.loginfo("init_data")
@@ -412,7 +442,7 @@ class HandleGuiManipulation(QObject):
         srvname = '/tabletop_collision_map_processing/tabletop_collision_map_processing'
         try:
             rospy.loginfo("Wait for tabletop node")
-            rospy.wait_for_service(srvname,1)
+            rospy.wait_for_service(srvname,self.srv_wait_time)
             self.service_tabletop_collision_map = rospy.ServiceProxy(srvname, TabletopCollisionMapProcessing)
             rospy.loginfo("OK")
         except:
@@ -422,7 +452,7 @@ class HandleGuiManipulation(QObject):
         srvname = '/uc3m_hdb/objects_database_node/get_model_description'
         try:
             rospy.loginfo("Wait for UC3M database node")
-            rospy.wait_for_service(srvname,1)
+            rospy.wait_for_service(srvname,self.srv_wait_time)
             self.service_db_get_model_description = rospy.ServiceProxy(srvname, GetModelDescription)
             rospy.loginfo("OK")
         except:
@@ -432,8 +462,9 @@ class HandleGuiManipulation(QObject):
         srvname = '/uc3m_hdb/get_object_pose'
         try:
             rospy.loginfo("Wait for UC3M tracker node")
-            rospy.wait_for_service(srvname,1)
+            rospy.wait_for_service(srvname,self.srv_wait_time)
             self.service_get_object_pose = rospy.ServiceProxy(srvname, GetObjectPose)
+            self.win.btn_detect_objects.setEnabled(True);
             rospy.loginfo("OK")
         except:
             rospy.logerr("not found")
@@ -442,8 +473,9 @@ class HandleGuiManipulation(QObject):
         srvname = '/uc3m_hdb/get_central_object_on_table'
         try:
             rospy.loginfo("Wait for UC3M detect node")
-            rospy.wait_for_service(srvname,1)
+            rospy.wait_for_service(srvname,self.srv_wait_time)
             self.service_get_central_object = rospy.ServiceProxy(srvname, GetCentralObjectOnTable)
+            self.win.btn_reconstruct_objects.setEnabled(True)
             rospy.loginfo("OK")
         except:
             rospy.logerr("not found")
@@ -452,7 +484,7 @@ class HandleGuiManipulation(QObject):
         srvname = '/uc3m_hdb/objects_database_node/get_model_list'
         try:
             rospy.loginfo("Wait for UC3M standard database node")
-            rospy.wait_for_service(srvname,1)
+            rospy.wait_for_service(srvname,self.srv_wait_time)
             self.service_get_model_list = rospy.ServiceProxy(srvname, GetModelList)
             rospy.loginfo("OK")
         except:
@@ -462,7 +494,7 @@ class HandleGuiManipulation(QObject):
         srvname = '/uc3m_hdb/get_list_by_acquisition_method'
         try:
             rospy.loginfo("Wait for UC3M get model by acquisition service")
-            rospy.wait_for_service(srvname,1)
+            rospy.wait_for_service(srvname,self.srv_wait_time)
             self.service_get_model_by_acquisition = rospy.ServiceProxy(srvname, getModelbyAcquisition)
             rospy.loginfo("OK")
         except:
@@ -472,7 +504,7 @@ class HandleGuiManipulation(QObject):
         srvname = '/fake_tracker/set_tracked_object'
         try:
             rospy.loginfo("Wait for UPMC tracker")
-            rospy.wait_for_service(srvname,1)
+            rospy.wait_for_service(srvname,self.srv_wait_time)
             self.service_set_tracked_object = rospy.ServiceProxy(srvname, SetTrackedObject)
             rospy.loginfo("OK")
         except:
@@ -482,8 +514,9 @@ class HandleGuiManipulation(QObject):
         srvname = '/execute_in_hand_mvt'
         try:
             rospy.loginfo("Wait for UPMC geom planner")
-            rospy.wait_for_service(srvname,1)
+            rospy.wait_for_service(srvname,self.srv_wait_time)
             self.service_geom_planner_exec = rospy.ServiceProxy(srvname, execute_in_hand_mvt)
+            self.win.btn_geom_planner.setEnabled(True)
             rospy.loginfo("OK")
         except:
             rospy.logerr("not found")
@@ -502,8 +535,9 @@ class HandleGuiManipulation(QObject):
         srvname = '/nano17ft/sensor_bias'
         try:
             rospy.loginfo("Wait for KCL sensors")
-            rospy.wait_for_service(srvname,1)
+            rospy.wait_for_service(srvname,self.srv_wait_time)
             self.service_bias_sensors = rospy.ServiceProxy(srvname, KCL_Sensor_Bias)
+            self.win.btn_bias_sensors.setEnabled(True)
             rospy.loginfo("OK")
         except:
             rospy.logerr("not found")
@@ -520,6 +554,7 @@ class HandleGuiManipulation(QObject):
             rospy.logerr("not found")    
             
         self.syn_client = actionlib.SimpleActionClient('synergy_grasp', SynergyGraspAction)
+        # TODO: Test availability of some topics or such to activate the syn grasp button
 
     def init_data(self):
         if self.service_get_model_by_acquisition!=None:
@@ -532,6 +567,16 @@ class HandleGuiManipulation(QObject):
             for model_id in existing_model_ids:
                 mymodel=self.get_object_name(model_id)
                 self.existing_model_names.append(mymodel.name)  
+
+    # pre-load all config images
+    def init_images(self):
+        for i in range(len(self.graspsLabel)):
+            if(i<10):
+                image_path='../images/config_0'+str(i+1)+'.png'
+            else:
+                image_path='../images/config_'+str(i+1)+'.png'
+            self.grasp_images.append(QPixmap(os.path.join(os.path.dirname(os.path.realpath(__file__)), image_path)))
+
 
     def eventFilter(self, obj, event):
         if obj is self.win and event.type() == QEvent.Close:
@@ -550,6 +595,15 @@ class HandleGuiManipulation(QObject):
 
     def restore_settings(self, global_settings, perspective_settings):
         loginfo(self.objectName()+" restoring settings")
+
+    def on_syn_combo_change(self):
+        # get current combo box index
+        self.grasp_syn_id=self.win.syn_combobox.currentIndex()
+        # get image related to this index
+        myimage=self.grasp_images[self.grasp_syn_id]
+        # set the image
+        self.win.syn_image.setPixmap(myimage.copy(0,0,170,170))
+
 
     def query_object_list(self,aq_method):
         # handle_uc3m_single_view or handle_manual
@@ -617,7 +671,7 @@ class HandleGuiManipulation(QObject):
         # Waits until the action server has started up and started
         # listening for goals.
         self.syn_client.wait_for_server()
-        print self.grasp_syn_ID
+        print self.grasp_syn_id
         # Sends the goal to the action server.
         self.syn_client.send_goal(goal)  
         # Waits for the server to finish performing the 
@@ -766,20 +820,18 @@ class HandleGuiManipulation(QObject):
         self.service_get_central_object(myrequest)
 
     def set_tracker(self):
-        myrequest=SetTrackedObjectRequest()
-        myrequest.tracked_object.model_id=8881
-        myrequest.tracked_object.pose=PoseStamped()
-        myrequest.tracked_object.pose.header.frame_id="world"
-        myrequest.tracked_object.pose.header.stamp=rospy.Time.now()
-        myrequest.tracked_object.pose.pose=Pose(self.obj_position,Quaternion(0,0,0,1))
-        
-        myrequest.tracked_object.confidence=1
-        myrequest.tracked_object.detector_name="uc3m"
-        
-        self.win.geom_posX.setText(str(self.obj_position.x))
-        self.win.geom_posY.setText(str(self.obj_position.y))
-        
-        self.service_set_tracked_object(myrequest)
+        if self.service_set_tracked_object!=None:
+            myrequest=SetTrackedObjectRequest()
+            myrequest.tracked_object.model_id=8881
+            myrequest.tracked_object.pose=PoseStamped()
+            myrequest.tracked_object.pose.header.frame_id="world"
+            myrequest.tracked_object.pose.header.stamp=rospy.Time.now()
+            myrequest.tracked_object.pose.pose=Pose(self.obj_position,Quaternion(0,0,0,1))
+            myrequest.tracked_object.confidence=1
+            myrequest.tracked_object.detector_name="uc3m"
+            self.win.geom_posX.setText(str(self.obj_position.x))
+            self.win.geom_posY.setText(str(self.obj_position.y))
+            self.service_set_tracked_object(myrequest)
 
     def detect_objects(self):
         self.found_objects.clear()
