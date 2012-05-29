@@ -1,0 +1,38 @@
+Header header
+
+# 2D structure of the point cloud. If the cloud is unordered, height is
+# 1 and width is the length of the point cloud.
+height: 1,
+width: 1,
+
+# Describes the channels and their layout in the binary data blob.
+PointField[] fields
+
+bool    is_bigendian # Is this data bigendian?
+uint32  point_step   # Length of a point in bytes
+uint32  row_step     # Length of a row in bytes
+uint8[] data         # Actual point data, size is (row_step*height)
+
+bool is_dense        # True
+------------------------------------------------------------------
+
+
+rostopic pub /full_cloud_filtered sensor_msgs/PointCloud2 "{ header: { 
+  seq: 0,
+  stamp: {
+    secs: 0,
+    nsecs: 27000000
+    },
+  frame_id: /camera_depth_optical_frame
+  },
+height: 1,
+width: 1,
+fields: [{name: x, offset: 0, datatype: 7, count: 1}, {name: y, offset: 4, datatype: 7, count: 1},{name: z, offset: 8, datatype: 7, count: 1}],
+is_bigendian: False,
+point_step: 16,
+row_step: 16,
+data: [0, 0, 192, 127],
+is_dense: True}" -r 1
+
+
+rostopic pub /full_cloud_filtered sensor_msgs/PointCloud2 "{ header: {   seq: 0,  stamp: {    secs: 0,    nsecs: 0    }, frame_id: /camera_depth_optical_frame },  height: 1,width: 1,fields: [{name: x, offset: 0, datatype: 7, count: 1}, {name: y, offset: 4, datatype: 7, count: 1},{name: z, offset: 8, datatype: 7, count: 1}],is_bigendian: False,point_step: 16,row_step: 16,data: [0, 0, 192, 127],is_dense: True}" -r 1
