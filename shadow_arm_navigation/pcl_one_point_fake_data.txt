@@ -21,7 +21,7 @@ rostopic pub /full_cloud_filtered sensor_msgs/PointCloud2 "{ header: {
   seq: 0,
   stamp: {
     secs: 0,
-    nsecs: 27000000
+    nsecs: 0
     },
   frame_id: /camera_depth_optical_frame
   },
