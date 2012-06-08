@@ -113,10 +113,10 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
             initial_pose = PoseStamped()
             initial_pose.header.stamp = rospy.get_rostime()
             initial_pose.header.frame_id = "/fixed"
-            initial_pose.pose.position.x = 0.0
-            initial_pose.pose.position.y = 0.2
-            initial_pose.pose.position.z = 0.0
-            q=transformations.quaternion_about_axis(0.0, (1,0,0))
+            initial_pose.pose.position.x = 0.0 #box_pose.pose.position.x+0.0
+            initial_pose.pose.position.y = 0.0 #box_pose.pose.position.y-0.2
+            initial_pose.pose.position.z = 0.05 #box_pose.pose.position.z+0.0
+            q=transformations.quaternion_about_axis(-0.30, (0,0,1))
             initial_pose.pose.orientation.x = q[0]
             initial_pose.pose.orientation.y = q[1]
             initial_pose.pose.orientation.z = q[2]
@@ -153,8 +153,8 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         direction.vector.z = 1;
         pickup_goal.lift.direction = direction;
         #request a vertical lift of 15cm after grasping the object
-        pickup_goal.lift.desired_distance = 0.05;
-        pickup_goal.lift.min_distance = 0.03;
+        pickup_goal.lift.desired_distance = 0.1;
+        pickup_goal.lift.min_distance = 0.07;
         #do not use tactile-based grasping or tactile-based lift
         pickup_goal.use_reactive_lift = True;
         pickup_goal.use_reactive_execution = True;
@@ -215,10 +215,10 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         direction.header.frame_id = "/base_link"
         direction.vector.x = 0
         direction.vector.y = 0
-        direction.vector.z = -1
+        direction.vector.z = 1
         place_goal.approach.direction = direction
-        place_goal.approach.min_distance = 0.05
-        place_goal.approach.desired_distance = 0.2
+        place_goal.approach.min_distance = 0.02
+        place_goal.approach.desired_distance = 0.1
         #request a vertical put down motion of 10cm before placing the object
         place_goal.desired_retreat_distance = 0.1
         place_goal.min_retreat_distance = 0.05
@@ -287,7 +287,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
             pose_tmp.orientation.w = pose_stamped.pose.orientation.w
 
             mat = pose_to_mat(pose_tmp)
-            self.draw_functions.draw_rviz_box(mat, [.01,.01,.01], frame='/fixed', ns='place_'+str(index),
+            self.draw_functions.draw_rviz_box(mat, [.01,.01,.01], frame='/object_frame', ns='place_'+str(index),
                                               id=1000+index, duration = 90, color=[0.5,0.5,0.0], opaque=1.0 )
 
     def call_find_cluster_bounding_box(self, cluster):
