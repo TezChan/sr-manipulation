@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="move_arm" type="move_arm_simple_action" name="arm_and_hand_move_right_little_finger">
+        <param name="group" type="string" value="right_little_finger" />
+        <remap from="arm_ik" to="arm_and_hand_right_little_finger_kinematics/get_constraint_aware_ik" />
+        <param name="controller_action_name" type="string" value="right_little_finger_controller/follow_joint_trajectory" />
+    </node>
+</launch>

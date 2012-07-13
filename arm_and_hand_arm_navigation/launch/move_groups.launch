@@ -1,0 +1,8 @@
+<launch>
+    <include file="$(find arm_and_hand_arm_navigation)/launch/move_right_arm.launch" />
+    <include file="$(find arm_and_hand_arm_navigation)/launch/move_right_first_finger.launch" />
+    <include file="$(find arm_and_hand_arm_navigation)/launch/move_right_little_finger.launch" />
+    <include file="$(find arm_and_hand_arm_navigation)/launch/move_right_middle_finger.launch" />
+    <include file="$(find arm_and_hand_arm_navigation)/launch/move_right_ring_finger.launch" />
+    <include file="$(find arm_and_hand_arm_navigation)/launch/move_right_thumb.launch" />
+</launch>
