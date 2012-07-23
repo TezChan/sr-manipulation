@@ -85,8 +85,8 @@ class ObjectChooser(QWidget):
         self.show()
 
     def double_click(self, item, value):
-        object_name = str(item.text(0))
-        self.object = self.gui.found_objects[object_name]
+        self.object_name = str(item.text(0))
+        self.object = self.gui.found_objects[self.object_name]
 
         graspable_object = self.object.graspable_object
 
@@ -100,31 +100,49 @@ class ObjectChooser(QWidget):
 box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientation.z,box_pose.pose.orientation.w)
         box_ranges = [[-box_dims.x / 2, -box_dims.y / 2, -box_dims.z / 2],
                       [box_dims.x / 2, box_dims.y / 2, box_dims.z / 2]]
+        self.box_pose=box_pose
 
         self.draw_functions.draw_rviz_box(box_mat, box_ranges, '/fixed',
                                           ns='bounding box',
                                           color=[0, 0, 1], opaque=0.25, duration=60)
 
         # call the pickup service
-        res = self.pickup(graspable_object, self.object.graspable_object_name, object_name)
+        res = self.pickup(graspable_object, self.object.graspable_object_name, self.object_name)
 
         if res == 0: #correctly picked up
         #TODO: set up place_location
             initial_pose = PoseStamped()
             initial_pose.header.stamp = rospy.get_rostime()
             initial_pose.header.frame_id = "/fixed"
-            initial_pose.pose.position.x = 0.0
-            initial_pose.pose.position.y = 0.2
-            initial_pose.pose.position.z = 0.0
-            q=transformations.quaternion_about_axis(0.0, (1,0,0))
+            initial_pose.pose.position.x = 0.0#self.box_pose.pose.position.x+0.0
+            initial_pose.pose.position.y = -0.1#self.box_pose.pose.position.y-0.2
+            initial_pose.pose.position.z = 0.05#self.box_pose.pose.position.z+0.05
+            q=transformations.quaternion_about_axis(-0.05, (0,0,1))
             initial_pose.pose.orientation.x = q[0]
             initial_pose.pose.orientation.y = q[1]
             initial_pose.pose.orientation.z = q[2]
             initial_pose.pose.orientation.w = q[3]
 
-            list_of_poses = self.compute_list_of_poses(initial_pose, graspable_object)
+            self.list_of_poses = self.compute_list_of_poses(initial_pose, graspable_object)
 
-            self.place_object(graspable_object, self.object.graspable_object_name, object_name, list_of_poses)
+            self.place_object(graspable_object, self.object.graspable_object_name, self.object_name, self.list_of_poses)
+
+    def place_click(self):
+        initial_pose = PoseStamped()
+        initial_pose.header.stamp = rospy.get_rostime()
+        initial_pose.header.frame_id = self.object.graspable_object.reference_frame_id#"/fixed"
+        initial_pose.pose.position.x = 0.2#self.box_pose.pose.position.x+0.0
+        initial_pose.pose.position.y = -0.1#self.box_pose.pose.position.y-0.2
+        initial_pose.pose.position.z = 0.05#self.box_pose.pose.position.z+0.05
+        q=transformations.quaternion_about_axis(-0.05, (0,0,1))
+        initial_pose.pose.orientation.x = 0#q[0]
+        initial_pose.pose.orientation.y = 0#q[1]
+        initial_pose.pose.orientation.z = 0#q[2]
+        initial_pose.pose.orientation.w = 1#q[3]
+
+        self.list_of_poses = self.compute_list_of_poses(initial_pose, self.object.graspable_object)
+
+        self.place_object(self.object.graspable_object, self.object.graspable_object_name, self.object_name, self.list_of_poses)
 
     def pickup(self, graspable_object, graspable_object_name, object_name):
         """
@@ -153,8 +171,8 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         direction.vector.z = 1;
         pickup_goal.lift.direction = direction;
         #request a vertical lift of 15cm after grasping the object
-        pickup_goal.lift.desired_distance = 0.05;
-        pickup_goal.lift.min_distance = 0.03;
+        pickup_goal.lift.desired_distance = 0.1;
+        pickup_goal.lift.min_distance = 0.07;
         #do not use tactile-based grasping or tactile-based lift
         pickup_goal.use_reactive_lift = True;
         pickup_goal.use_reactive_execution = True;
@@ -169,7 +187,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         loginfo("Got Pickup results")
         self.pickup_result = pickup_client.get_result()
 
-        #print "HELLO: "+str(self.pickup_result)
+        #print "Pickup result: "+str(self.pickup_result)
         if pickup_client.get_state() != GoalStatus.SUCCEEDED:
             rospy.logerr("The pickup action has failed: " + str(self.pickup_result.manipulation_result.value) )
             QMessageBox.warning(self, "Warning",
@@ -215,10 +233,10 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         direction.header.frame_id = "/base_link"
         direction.vector.x = 0
         direction.vector.y = 0
-        direction.vector.z = -1
+        direction.vector.z = 1
         place_goal.approach.direction = direction
-        place_goal.approach.min_distance = 0.05
-        place_goal.approach.desired_distance = 0.2
+        place_goal.approach.min_distance = 0.02
+        place_goal.approach.desired_distance = 0.1
         #request a vertical put down motion of 10cm before placing the object
         place_goal.desired_retreat_distance = 0.1
         place_goal.min_retreat_distance = 0.05
@@ -250,7 +268,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
 
         current_pose = PoseStamped()
         current_pose.header.stamp = rospy.get_rostime()
-        current_pose.header.frame_id = "/fixed"
+        current_pose.header.frame_id = initial_pose.header.frame_id #"/fixed"
         current_pose.pose.position.x = initial_pose.pose.position.x
         current_pose.pose.position.y = initial_pose.pose.position.y
         current_pose.pose.position.z = initial_pose.pose.position.z
@@ -287,7 +305,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
             pose_tmp.orientation.w = pose_stamped.pose.orientation.w
 
             mat = pose_to_mat(pose_tmp)
-            self.draw_functions.draw_rviz_box(mat, [.01,.01,.01], frame='/fixed', ns='place_'+str(index),
+            self.draw_functions.draw_rviz_box(mat, [.01,.01,.01], frame='/object_frame', ns='place_'+str(index),
                                               id=1000+index, duration = 90, color=[0.5,0.5,0.0], opaque=1.0 )
 
     def call_find_cluster_bounding_box(self, cluster):
@@ -392,8 +410,8 @@ class SrGuiManipulation(QObject):
         self.win.btn_collision_map.pressed.connect(self.process_collision_map)
         self.win.btn_collision_map.setEnabled(False)
         self.win.btn_start_grab_position.pressed.connect(self.start_grab_position)
-        self.win.btn_zero_position.pressed.connect(self.zero_position)
-
+#        self.win.btn_zero_position.pressed.connect(self.zero_position)
+        self.win.btn_zero_position.pressed.connect(self.redo_place)
         self.robot_lib_eth = EtherCAT_Hand_Lib()
 #        if not self.robot_lib_eth.activate_joint_states():
 #            logerr("The EtherCAT Hand node doesn't seem to be running")
@@ -623,6 +641,9 @@ class SrGuiManipulation(QObject):
     def zero_position(self):
         """Move all joints back to zero"""
         self.position_arm('zero')
+
+    def redo_place(self):
+        self.object_chooser.place_click()
 
     def start_grab_position(self):
         """Move the arm into a good starting position for the grab"""

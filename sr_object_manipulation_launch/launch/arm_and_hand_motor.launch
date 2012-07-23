@@ -18,7 +18,8 @@
 	-->
 <!--	<node pkg="sr_move_arm" type="move_arm_simple_action" name="move_arm_simple_action"  machine="robot"/>  -->
 
-  <node pkg="sr_mechanism_controllers" type="joint_trajectory_action_controller" name="sr_joint_trajectory_action_controller"/>
+<!--  <node pkg="sr_mechanism_controllers" type="joint_trajectory_action_controller" name="sr_joint_trajectory_action_controller"/> -->
+  <node pkg="sr_mechanism_controllers" type="joint_spline_trajectory_action_controller" name="sr_joint_trajectory_action_controller"/>
 
   <arg name="tactile_prefix" default="/sr_tactile" /> 
 	<node pkg="sr_move_arm" type="hand_posture_execution" name="hand_posture_execution" machine="robot">
