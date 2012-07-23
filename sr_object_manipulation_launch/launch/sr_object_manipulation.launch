@@ -1,6 +1,6 @@
 <launch>
   <group if="$(optenv SIMULATED 0)">
-    <include file="$(find sr_hand)/launch/can.launch"/>
+    <include file="$(find sr_worlds)/launch/can.launch"/>
   </group>
 
   <!-- specifies the machines on which the nodes will be run -->

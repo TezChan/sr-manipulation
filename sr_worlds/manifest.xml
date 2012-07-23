@@ -1,0 +1,17 @@
+<package>
+  <description brief="sr_worlds">
+
+     sr_worlds contains necessary files to setup scenes in gazebo for object manipulation
+
+  </description>
+  <author>Guillaume WALCK (UPMC)</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/sr_worlds</url>
+  <depend package="xacro"/>
+  <depend package="gazebo"/>
+  <depend package="gazebo_plugins"/>
+
+</package>
+
+

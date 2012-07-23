@@ -1,0 +1,5 @@
+<launch>
+   <param name="balance_description" textfile="$(find sr_worlds)/objects/balance.urdf" />
+   <node name="spawn_balance" pkg="gazebo" type="spawn_model" args="-gazebo -param balance_description -x 0.5 -y -0.85 -z 1.1 -R 3.1416 -P 0 -Y 3.1416 -model balance_description" respawn="false" output="screen" />
+</launch>
+
