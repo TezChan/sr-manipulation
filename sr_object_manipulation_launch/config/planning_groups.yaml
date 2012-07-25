@@ -16,8 +16,8 @@ groups:
       shadowarm_trunk
       shadowarm_upperarm
       shadowarm_lowerarm
-      shadowarm_handsupport_motor
-      forearm_motor
+      shadow_handsupport
+      forearm
       wrist
       palm
   - name: arms
@@ -33,8 +33,8 @@ groups:
       shadowarm_trunk
       shadowarm_upperarm
       shadowarm_lowerarm
-      shadowarm_handsupport_motor
-      forearm_motor
+      shadow_handsupport
+      forearm
       wrist
       palm
     planner_configs:

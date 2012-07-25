@@ -10,6 +10,9 @@
 		<!-- republish the /gazebo/joint_states on /joint_states with a relay (so we don't have to change all other launch files from environment server) -->
     <node pkg="topic_tools" name="joint_states_merger" type="relay" args="/gazebo/joint_states /joint_states" />
 
+ 	 <!-- advertise a getJointState for spline trajectory controller to work -->
+                <node pkg="sr_utilities" type="get_joint_states.py" name="get_joint_states"/>
+
 		<!-- relay the service from sr_controller manager to pr2_controller_manager -->
 		<node pkg="sr_controller_manager" name="sr_controller_manager" type="sr_controller_manager.py" args="pr2_controller_manager"/> 
   </group>
