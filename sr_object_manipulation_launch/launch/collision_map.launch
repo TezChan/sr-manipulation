@@ -20,7 +20,7 @@
 
     <!-- The default padding to be added for the body parts the robot can see
     -->
-    <param name="self_see_default_padding" type="double" value="0.01" />
+    <param name="self_see_default_padding" type="double" value="0.003" />
     <!-- The default scaling to be added for the body parts the robot can see
     -->
     <param name="self_see_default_scale" type="double" value="1.0" />
@@ -40,7 +40,7 @@
 
     <!-- define a box of size 0.5x0.5x0.5 around (0, 0, 0) in the robot frame
     -->
-    <param name="robot_frame" type="string" value="/forearm_motor"
+    <param name="robot_frame" type="string" value="/forearm"
 	   />
 
     <param name="origin_x" type="double" value="0.0" />

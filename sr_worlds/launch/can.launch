@@ -6,6 +6,6 @@
 
   <!-- push table_description to factory and spawn robot in gazebo -->
   <node name="spawn_table" pkg="gazebo" type="spawn_model" args="-urdf -param table_description -x -0.25 -z 0.01 -model table_model" respawn="false" output="screen" />
-  <node name="spawn_can" pkg="gazebo" type="spawn_model" args="-urdf -param object_manip -x 0.44 -y 0.16 -z 0.91 -R 0.0 -P 0.0 -Y 0.0 -model object_manip_model" respawn="false" output="screen" />
+  <node name="spawn_can" pkg="gazebo" type="spawn_model" args="-urdf -param object_manip -x 0.54 -y 0.06 -z 0.91 -R 0.0 -P 0.0 -Y 0.0 -model object_manip_model" respawn="false" output="screen" />
 </launch>
 

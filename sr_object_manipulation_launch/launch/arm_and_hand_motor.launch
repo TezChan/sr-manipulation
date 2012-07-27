@@ -2,14 +2,14 @@
 	<group unless="$(optenv SIMULATED 0)">
 		<!-- merge the arm / hand joint_states topics to publish onto /joint_states -->
 		<node pkg="sr_utilities" type="ordered_hand_arm_joint_states_merger.py" name="joint_states_merger"/>
-
 		<!-- merge the arm / hand controller manager (services) on real robot -->
     <node pkg="sr_controller_manager" name="sr_controller_manager" type="sr_controller_manager.py" args="sr_arm_controller_manager pr2_controller_manager"/> 
 	</group>
   <group if="$(optenv SIMULATED 0)">
 		<!-- republish the /gazebo/joint_states on /joint_states with a relay (so we don't have to change all other launch files from environment server) -->
     <node pkg="topic_tools" name="joint_states_merger" type="relay" args="/gazebo/joint_states /joint_states" />
-
+ 	  <!-- advertise a getJointState for spline trajectory controller to work -->
+    <node pkg="sr_utilities" type="get_joint_states.py" name="get_joint_states"/>
 		<!-- relay the service from sr_controller manager to pr2_controller_manager -->
 		<node pkg="sr_controller_manager" name="sr_controller_manager" type="sr_controller_manager.py" args="pr2_controller_manager"/> 
   </group>
@@ -24,7 +24,7 @@
   <arg name="tactile_prefix" default="/sr_tactile" /> 
 	<node pkg="sr_move_arm" type="hand_posture_execution" name="hand_posture_execution" machine="robot">
 		<remap from="is_hand_occupied" to ="$(arg tactile_prefix)/is_hand_occupied"/>
-        </node>
+  </node>
 
 	<!--prepare tactile threshold-->
  	<group if="$(optenv SIMULATED 0)">	
@@ -48,6 +48,7 @@
 	<node pkg="sr_tactile_sensors" name="sr_tactile" type="sr_tactile_virtual_gazebo" respawn="false">
 	  <rosparam file="$(find sr_tactile_sensors)/params/sensor_names.yaml" command="load"/>
 	</node>
+  <node pkg="tf" type="static_transform_publisher" name="fixed_frame_pub_arm" args="0 0 0 0 0 0 fixed /desk_support 100" />
 	</group>
 </launch>
 
