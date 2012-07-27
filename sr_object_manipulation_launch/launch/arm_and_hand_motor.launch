@@ -22,18 +22,19 @@
   <node pkg="sr_mechanism_controllers" type="joint_spline_trajectory_action_controller" name="sr_joint_trajectory_action_controller"/>
 
   <arg name="tactile_prefix" default="/sr_tactile" /> 
-	<node pkg="sr_move_arm" type="hand_posture_execution" name="hand_posture_execution" machine="robot">
-		<remap from="is_hand_occupied" to ="$(arg tactile_prefix)/is_hand_occupied"/>
+  <node pkg="sr_move_arm" type="hand_posture_execution" name="hand_posture_execution" machine="robot">
+	<remap from="/is_hand_occupied" to ="$(arg tactile_prefix)/is_hand_occupied"/>
   </node>
 
 	<!--prepare tactile threshold-->
  	<group if="$(optenv SIMULATED 0)">	
- 		<param name="light_touch_thresholds" value="[100.,100.,100.,100.,0.0]" />
-    <param name="grasp_touch_thresholds" value="[117.,117.,113.,111.,0.0]" />
-  </group>
+<!-- 	    <param name="light_touch_thresholds" value="[100.,100.,100.,100.,0.0]" /> -->
+<!--	    <param name="grasp_touch_thresholds" value="[117.,117.,113.,111.,0.0]" /> -->
+  	    <rosparam file="$(find sr_object_manipulation_launch)/config/gazebo_tactile_thresholds.yaml" command="load"/>
+	</group>
 	<group unless="$(optenv SIMULATED 0)">
    <!-- DEPENDS if we use PST sensors or KCL sensors ... should this be defined in the sr_move_arm ? -->	
-	 <rosparam file="$(find sr_move_arm)/config/tactile_thresholds.yaml" command="load"/>
+	 <rosparam file="$(find sr_object_manipulation_launch)/config/tactile_thresholds.yaml" command="load"/>
   </group>
 
 	<node name="reactive_grasp_node_right" pkg="sr_move_arm"
@@ -50,6 +51,16 @@
 	</node>
   <node pkg="tf" type="static_transform_publisher" name="fixed_frame_pub_arm" args="0 0 0 0 0 0 fixed /desk_support 100" />
 	</group>
+
+     <!-- Robot state publisher: publishes tf information regarding the grasps of the hand -->
+  <node pkg="robot_state_publisher" type="state_publisher"
+        name="robot_state_publisher_grasp_target">
+    <remap from="robot_description" to="sh_description"/>
+    <remap from="joint_states" to="grasp/joint_states" />
+    <param name="publish_frequency" type="double" value="1.0" />
+    <param name="tf_prefix" type="string" value="grasp" />
+  </node>
+
 </launch>
 
 

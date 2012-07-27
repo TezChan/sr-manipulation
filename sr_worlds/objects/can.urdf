@@ -17,14 +17,14 @@
       <!-- visual origin is defined w.r.t. link local coordinate system -->
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-       <mesh filename="package://sr_worlds/meshes/can.mesh" scale="0.001 0.001 0.0009" />
+       <mesh filename="package://sr_worlds/meshes/can.mesh" scale="0.0011 0.0011 0.001" />
       </geometry>
     </visual>
     <collision>
       <!-- collision origin is defined w.r.t. link local coordinate system -->
       <origin xyz="0 0 0" rpy="0 0 0 " />
       <geometry>
-	<mesh filename="package://sr_worlds/meshes/can.mesh" scale="0.001 0.001 0.0009" />
+	<mesh filename="package://sr_worlds/meshes/can.mesh" scale="0.0011 0.0011 0.001" />
       </geometry>
     </collision>
   </link>

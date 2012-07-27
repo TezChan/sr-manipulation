@@ -1,0 +1,19 @@
+<package>
+  <description brief="sr_grasp_viz">
+
+     sr_grasp_viz
+
+  </description>
+  <author>GuiHome</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/sr_grasp_viz</url>
+  <depend package="rospy"/>
+  <depend package="sensor_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="tf"/>
+  <depend package="object_manipulation_msgs"/>
+
+</package>
+
+

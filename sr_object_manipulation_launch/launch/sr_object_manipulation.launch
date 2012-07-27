@@ -32,15 +32,15 @@
   <!-- start linking the hand and arm -->
    <!-- On real robot tactile prefix is / or /kcl -->
   <group unless="$(optenv SIMULATED 0)"> 
-	  <include file="$(find sr_object_manipulation_launch)/launch/arm_and_hand_motor.launch">
-			<arg name="tactile_prefix" value="" /> 
+    <include file="$(find sr_object_manipulation_launch)/launch/arm_and_hand_motor.launch">
+      <arg name="tactile_prefix" value="" /> 
     </include>
-   </group>
-	<group if="$(optenv SIMULATED 0)"> 
-	  <include file="$(find sr_object_manipulation_launch)/launch/arm_and_hand_motor.launch">
-			<arg name="tactile_prefix" value="/sr_tactile" /> 
+  </group>
+  <group if="$(optenv SIMULATED 0)"> 
+    <include file="$(find sr_object_manipulation_launch)/launch/arm_and_hand_motor.launch">
+      <arg name="tactile_prefix" value="/sr_tactile" /> 
     </include>
-	</group> 
+  </group> 
   
   <!-- starts the arm navigation -->
     <!-- We expect a merger to merge the joint_states on /joint_states -->

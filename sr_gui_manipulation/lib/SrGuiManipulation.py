@@ -34,7 +34,7 @@ from tabletop_collision_map_processing.srv import TabletopCollisionMapProcessing
 from household_objects_database_msgs.srv import GetModelDescription
 import object_manipulator.draw_functions as draw_functions
 from object_manipulation_msgs.srv import FindClusterBoundingBox, FindClusterBoundingBoxRequest
-from object_manipulation_msgs.msg import PickupGoal, PickupAction, PlaceGoal, PlaceAction
+from object_manipulation_msgs.msg import Grasp, PickupGoal, PickupAction, PlaceGoal, PlaceAction
 from object_manipulator.convert_functions import *
 from geometry_msgs.msg import Vector3Stamped, PoseStamped, Pose
 import actionlib
@@ -59,7 +59,8 @@ class ObjectChooser(QWidget):
         self.title.setText(title)
         self.draw_functions = draw_functions.DrawFunctions('grasp_markers')
         self.pickup_result  = None
-        self.listener       = tf.TransformListener()
+        self.listener       = tf.TransformListener()       
+        self.grasp_display_publisher = rospy.Publisher("/grasp_display", Grasp)
 
     def draw(self):
         self.frame = QFrame(self)
@@ -192,8 +193,10 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
             rospy.logerr("The pickup action has failed: " + str(self.pickup_result.manipulation_result.value) )
             QMessageBox.warning(self, "Warning",
                     "Pickup action failed: "+str(self.pickup_result.manipulation_result.value))
+            for tested_grasp,tested_grasp_result in zip(self.pickup_result.attempted_grasps,self.pickup_result.attempted_grasp_results):
+                if tested_grasp_result.result_code==7:
+                  self.grasp_display_publisher.publish(tested_grasp)
             return -1
-
         return 0
 
     def place_object(self, graspable_object, graspable_object_name, object_name, list_of_poses ):
