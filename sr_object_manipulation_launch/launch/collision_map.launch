@@ -20,7 +20,7 @@
 
     <!-- The default padding to be added for the body parts the robot can see
     -->
-    <param name="self_see_default_padding" type="double" value="0.05" />
+    <param name="self_see_default_padding" type="double" value="0.003" />
     <!-- The default scaling to be added for the body parts the robot can see
     -->
     <param name="self_see_default_scale" type="double" value="1.0" />

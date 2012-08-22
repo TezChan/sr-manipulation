@@ -1,4 +1,6 @@
 <launch>
+  <node pkg="tf" type="static_transform_publisher" name="world_to_desk_support"
+    args="0.0 0.0 0.0 0.0 0.0 0.0 /world /desk_support 100"/>
   <node pkg="tf" type="static_transform_publisher" name="world_to_base_link"
     args="0.0 0.0 0.0 0.0 0.0 0.0 /world /base_link 100"/>
 
