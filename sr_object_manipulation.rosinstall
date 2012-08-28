@@ -1,7 +1,10 @@
-- bzr: {local-name: shadow_robot, uri: 'lp:~ugocupcic/sr-ros-interface/manipulation'}
-- svn: {local-name: sql_database, uri: 'https://code.ros.org/svn/wg-ros-pkg/stacks/sql_database/trunk'}
-- svn: {local-name: object_manipulation, uri: 'https://code.ros.org/svn/wg-ros-pkg/stacks/object_manipulation/trunk'}
-- svn: {local-name: pr2_object_manipulation, uri: 'https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_object_manipulation/trunk'}
-- svn: {local-name: tabletop_object_perception, uri: 'https://code.ros.org/svn/wg-ros-pkg/stacks/tabletop_object_perception/trunk'}
-- svn: {local-name: pr2_tabletop_manipulation_apps, uri: 'https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_tabletop_manipulation_apps/trunk'}
-- svn: {local-name: graspit_simulator, uri: 'https://code.ros.org/svn/wg-ros-pkg/branches/trunk_diamondback/stacks/graspit_simulator'}
+
+- bzr: {local-name: shadow_robot, uri: 'lp:sr-ros-interface', version: manipstack_electric}
+- bzr: {local-name: shadow_robot_ethercat, uri: 'lp:sr-ros-interface-ethercat', version: manipstack_electric}
+- bzr: {local-name: sr_contrib, uri: 'lp:sr-contrib', version: manipstack_electric}
+- bzr: {local-name: sr_config, uri: 'lp:sr-config', version: manipstack_electric}
+- bzr: {local-name: sr_visualization, uri: 'lp:~shadowrobot/sr-visualization/new_gui', version: manipstack_electric}
+- bzr: {local-name: rosgui, uri: 'lp:rosgui', version: manipstack_electric}
+- bzr: {local-name: sr_teleop, uri: 'lp:sr-teleop', version: manipstack_electric}
+- bzr: {local-name: sr_manipulation, uri: 'lp:sr-manipulation', version: manipstack_electric}
+- svn: {local-name: arm_kinematics, uri: 'https://wu-robotics.googlecode.com/svn/branches/stable/urdf_tools/arm_kinematics'}
