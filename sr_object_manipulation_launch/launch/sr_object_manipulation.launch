@@ -15,9 +15,7 @@
   <!-- <include file="$(find openni_launch)/launch/openni.launch"/>-->
 
   <!-- start attaching the platform to various required frames -->
-  <group unless="$(optenv SIMULATED 0)">
-    <include file="$(find sr_object_manipulation_launch)/launch/static_transform.launch"/>
-  </group>
+  <include file="$(find sr_object_manipulation_launch)/launch/static_transform.launch"/>
 
   <group unless="$(optenv SIMULATED 0)">
     <!-- Sets the position of the kinect in comparison to the robot when NOT simulated -->
@@ -31,23 +29,23 @@
 
   <!-- start linking the hand and arm -->
    <!-- On real robot tactile prefix is / or /kcl -->
-  <group unless="$(optenv SIMULATED 0)"> 
+  <group unless="$(optenv SIMULATED 0)">
     <include file="$(find sr_object_manipulation_launch)/launch/arm_and_hand_motor.launch">
-      <arg name="tactile_prefix" value="" /> 
+      <arg name="tactile_prefix" value="" />
     </include>
   </group>
-  <group if="$(optenv SIMULATED 0)"> 
+  <group if="$(optenv SIMULATED 0)">
     <include file="$(find sr_object_manipulation_launch)/launch/arm_and_hand_motor.launch">
-      <arg name="tactile_prefix" value="/sr_tactile" /> 
+      <arg name="tactile_prefix" value="/sr_tactile" />
     </include>
-  </group> 
-  
+  </group>
+
   <!-- starts the arm navigation -->
     <!-- We expect a merger to merge the joint_states on /joint_states -->
     <include file="$(find shadow_arm_navigation)/launch/shadow_arm_navigation.launch" />
 
 
- 
+
   <!-- build the collision map -->
   <include file="$(find sr_object_manipulation_launch)/launch/collision_map.launch"/>
 
