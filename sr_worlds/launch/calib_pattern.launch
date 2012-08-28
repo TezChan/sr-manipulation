@@ -1,0 +1,7 @@
+<launch>
+  <!-- send urdf of can to param server -->
+  <param name="calib_pattern" textfile="$(find sr_worlds)/objects/calib_pattern.urdf" />
+
+  <node name="spawn_cali_pattern" pkg="gazebo" type="spawn_model" args="-urdf -param calib_pattern -x 0.7 -y 0.0 -z 0.86 -R 0.0 -P 0.0 -Y 0.0 -model calib_pattern_model" respawn="false" output="screen" />
+</launch>
+

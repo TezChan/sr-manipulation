@@ -1,0 +1,12 @@
+<launch>
+  <include file="$(find sr_object_manipulation_launch)/machines/threedsensor.machine"/>
+<!-- This transform should be computed by the calibration software -->
+<!-- <node pkg="tf" type="static_transform_publisher" name="trunk_to_kinect"
+    args="0.027 0.205  0.422248 -0.594811 0.36128 0.203393 0.688727 /shadowarm_trunk /camera_link 100" machine="threedsensor"/> --> 
+ <node pkg="tf" type="static_transform_publisher" name="trunk_to_kinect"
+    args="0.0094 0.200 0.385 -0.235 0.81 -1.57533 /shadowarm_trunk /camera_link 100" machine="threedsensor"/> 
+
+<!-- new panned 45 deg   <node pkg="tf" type="static_transform_publisher" name="trunk_to_kinect"
+    args="-0.11404 0.140594 0.387348 -0.686704 0.0976917 0.450266 0.562276 /shadowarm_trunk /camera_link 100" machine="threedsensor"/> -->
+
+</launch>

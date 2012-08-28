@@ -1,6 +1,9 @@
 <launch>
-  <include file="$(find sr_object_manipulation_launch)/machines/threedsensor.machine"/>
+  <node pkg="tf" type="static_transform_publisher" name="world_to_desk_support"
+    args="0.0 0.0 0.0 0.0 0.0 0.0 /world /desk_support 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="world_to_base_link"
+    args="0.0 0.0 0.0 0.0 0.0 0.0 /world /base_link 100"/>
 
-  <node pkg="tf" type="static_transform_publisher" name="fixed_to_kinect"
-    args="0.8 .1 1.9 0 2.6 0 /base_link /openni_camera 100" machine="threedsensor"/>
+  <node pkg="tf" type="static_transform_publisher" name="world_to_fixed"
+    args="0.0 0.0 0.0 0.0 0.0 0.0 /world /fixed 100"/>
 </launch>

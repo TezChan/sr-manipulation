@@ -1,0 +1,3 @@
+<launch>
+    <include file="$(find shadow_arm_navigation)/launch/move_right_arm.launch" />
+</launch>

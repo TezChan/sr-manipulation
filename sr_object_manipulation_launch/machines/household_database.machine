@@ -1,3 +1,3 @@
 <launch>
-  <machine name="household_database" address="poseidon" ros-root="/opt/ros/ros" ros-package-path="/opt/ros/"  default="true" user="ros"/>
+  <machine name="household_database" address="localhost" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true" user="$(env USER)"/>
 </launch>

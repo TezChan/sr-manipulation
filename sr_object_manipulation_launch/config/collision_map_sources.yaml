@@ -1,8 +1,8 @@
 cloud_sources:
-  - name: full_cloud_filtered
+  - name: /full_cloud_filtered/pcl_compat
     frame_subsample: 4
     point_subsample: 1
-    sensor_frame: /openni_rgb_depth_frame
+    sensor_frame: /camera_link
     dynamic_publish: false
     static_publish: true
     dynamic_until_static_publish: true

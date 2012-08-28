@@ -1,0 +1,32 @@
+<package>
+  <description brief="sr_gui_manipulation">
+
+     sr_gui_manipulation - Shadow Robot GUI plugin for manipulation, detecting objects and starting grabs.
+
+  </description>
+  <author>Mark Pitchless</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/sr_gui_manipulation</url>
+  <depend package="rospy"/>
+  <depend package="rosgui"/>
+  <depend package="rosgui_rospy"/>
+  <depend package="rosgui_cpp_sip" />
+  <depend package="rosgui_roscpp" />
+  <depend package="rostopic"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="tabletop_collision_map_processing"/>
+  <depend package="object_manipulator"/>
+  <depend package="sr_robot_lib"/>
+  <depend package="sr_hand"/>
+  <depend package="actionlib"/>
+  <depend package="control_msgs"/>
+
+  <export>
+    <rosgui plugin="${prefix}/sr_gui_manipulation.xml"/>
+  </export>
+
+</package>
+<!-- vim: sw=2:ts=2:expandtab
+-->

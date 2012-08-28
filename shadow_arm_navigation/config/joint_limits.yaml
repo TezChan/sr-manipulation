@@ -1,0 +1,43 @@
+joint_limits:
+  ShoulderJRotate:
+    has_position_limits: true
+    has_velocity_limits: true
+    max_velocity: 0.5
+    has_acceleration_limits: true
+    max_acceleration: 1
+    angle_wraparound: false
+  ShoulderJSwing:
+    has_position_limits: true
+    has_velocity_limits: true
+    max_velocity: 0.5
+    has_acceleration_limits: true
+    max_acceleration: 1
+    angle_wraparound: false
+  ElbowJSwing:
+    has_position_limits: true
+    has_velocity_limits: true
+    max_velocity: 0.5
+    has_acceleration_limits: true
+    max_acceleration: 1
+    angle_wraparound: false
+  ElbowJRotate:
+    has_position_limits: true
+    has_velocity_limits: true
+    max_velocity: 0.5
+    has_acceleration_limits: true
+    max_acceleration: 1
+    angle_wraparound: false
+  WRJ2:
+    has_position_limits: true
+    has_velocity_limits: true
+    max_velocity: 1
+    has_acceleration_limits: true
+    max_acceleration: 1
+    angle_wraparound: false
+  WRJ1:
+    has_position_limits: true
+    has_velocity_limits: true
+    max_velocity: 1
+    has_acceleration_limits: true
+    max_acceleration: 1
+    angle_wraparound: false
