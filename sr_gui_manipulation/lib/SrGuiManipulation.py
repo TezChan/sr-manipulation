@@ -413,9 +413,11 @@ class SrGuiManipulation(QObject):
         self.win.btn_collision_map.pressed.connect(self.process_collision_map)
         self.win.btn_collision_map.setEnabled(False)
         self.win.btn_start_grab_position.pressed.connect(self.start_grab_position)
-#        self.win.btn_zero_position.pressed.connect(self.zero_position)
-        self.win.btn_zero_position.pressed.connect(self.redo_place)
+        self.win.btn_zero_position.pressed.connect(self.zero_position)
+#        self.win.btn_zero_position.pressed.connect(self.redo_place)
         self.robot_lib_eth = EtherCAT_Hand_Lib()
+
+# Guillaume: Currently removed because requires ethercat to be active to run, ethercat does exist in sim
 #        if not self.robot_lib_eth.activate_joint_states():
 #            logerr("The EtherCAT Hand node doesn't seem to be running")
 #        self.robot_lib_can = ShadowHand_ROS()

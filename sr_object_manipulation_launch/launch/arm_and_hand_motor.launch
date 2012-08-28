@@ -1,40 +1,41 @@
 <launch>
-	<group unless="$(optenv SIMULATED 0)">
-            <!-- in real world no robot description is loaded, but in simulation gazebo does that -->
+  <group unless="$(optenv SIMULATED 0)">
+    <!-- in real world no robot description is loaded, but in simulation gazebo does that -->
     <group if="$(optenv MUSCLE 0)">
-    <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_description)/robots/arm_and_hand_muscle.urdf.xacro'" />
-  </group>
-  <group unless="$(optenv MUSCLE 0)">
-    <group if="$(optenv ONE_FINGER 0)">
-      <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_description)/robots/arm_and_sr_one_finger_motor.urdf.xacro'" />
+      <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_description)/robots/arm_and_hand_muscle.urdf.xacro'" />
     </group>
-    <group unless="$(optenv ONE_FINGER 0)">
-      <group if="$(optenv THREE_FINGER 0)">
-        <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_description)/robots/arm_and_hand_motor_three_finger.urdf.xacro'" />
+    <group unless="$(optenv MUSCLE 0)">
+      <group if="$(optenv ONE_FINGER 0)">
+        <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_description)/robots/arm_and_sr_one_finger_motor.urdf.xacro'" />
       </group>
-      <group unless="$(optenv THREE_FINGER 0)">
-        <group if="$(optenv ELLIPSOID 0)">
-          <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_description)/robots/arm_and_hand_motor_ellipsoid.urdf.xacro'" />
+      <group unless="$(optenv ONE_FINGER 0)">
+        <group if="$(optenv THREE_FINGER 0)">
+          <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_description)/robots/arm_and_hand_motor_three_finger.urdf.xacro'" />
         </group>
-        <group unless="$(optenv ELLIPSOID 0)">
-          <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_description)/robots/arm_and_hand_motor.urdf.xacro'" />
+        <group unless="$(optenv THREE_FINGER 0)">
+          <group if="$(optenv ELLIPSOID 0)">
+            <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_description)/robots/arm_and_hand_motor_ellipsoid.urdf.xacro'" />
+          </group>
+          <group unless="$(optenv ELLIPSOID 0)">
+            <param name="robot_description" command="$(find xacro)/xacro.py '$(find sr_description)/robots/arm_and_hand_motor.urdf.xacro'" />
+          </group>
         </group>
       </group>
     </group>
-  </group>
-		<!-- merge the arm / hand joint_states topics to publish onto /joint_states -->
-		<node pkg="sr_utilities" type="ordered_hand_arm_joint_states_merger.py" name="joint_states_merger"/>
-		<!-- merge the arm / hand controller manager (services) on real robot -->
+    <!-- merge the arm / hand joint_states topics to publish onto /joint_states -->
+    <node pkg="sr_utilities" type="ordered_hand_arm_joint_states_merger.py" name="joint_states_merger"/>
+    <!-- merge the arm / hand controller manager (services) on real robot -->
     <node pkg="sr_controller_manager" name="sr_controller_manager" type="sr_controller_manager.py" args="sr_arm_controller_manager pr2_controller_manager"/> 
-	</group>
-  <group if="$(optenv SIMULATED 0)">
-		<!-- republish the /gazebo/joint_states on /joint_states with a relay (so we don't have to change all other launch files from environment server) -->
-    <node pkg="topic_tools" name="joint_states_merger" type="relay" args="/gazebo/joint_states /joint_states" />
- 	  <!-- advertise a getJointState for spline trajectory controller to work -->
-    <node pkg="sr_utilities" type="get_joint_states.py" name="get_joint_states"/>
-		<!-- relay the service from sr_controller manager to pr2_controller_manager -->
-		<node pkg="sr_controller_manager" name="sr_controller_manager" type="sr_controller_manager.py" args="pr2_controller_manager"/> 
   </group>
+  <group if="$(optenv SIMULATED 0)">
+    <!-- republish the /gazebo/joint_states on /joint_states with a relay (so we don't have to change all other launch files from environment server) -->
+    <node pkg="topic_tools" name="joint_states_merger" type="relay" args="/gazebo/joint_states /joint_states" />
+    <!-- advertise a getJointState for spline trajectory controller to work -->
+    <node pkg="sr_utilities" type="get_joint_states.py" name="get_joint_states"/>
+    <!-- relay the service from sr_controller manager to pr2_controller_manager -->
+    <node pkg="sr_controller_manager" name="sr_controller_manager" type="sr_controller_manager.py" args="pr2_controller_manager"/> 
+  </group>
+
 	<!--
 	    Trajectories / grasp execution
 	-->
@@ -48,15 +49,15 @@
 	<remap from="/is_hand_occupied" to ="$(arg tactile_prefix)/is_hand_occupied"/>
   </node>
 
-	<!--prepare tactile threshold-->
- 	<group if="$(optenv SIMULATED 0)">	
+  <!--prepare tactile threshold-->
+  <group if="$(optenv SIMULATED 0)">	
 <!-- 	    <param name="light_touch_thresholds" value="[100.,100.,100.,100.,0.0]" /> -->
 <!--	    <param name="grasp_touch_thresholds" value="[117.,117.,113.,111.,0.0]" /> -->
   	    <rosparam file="$(find sr_object_manipulation_launch)/config/gazebo_tactile_thresholds.yaml" command="load"/>
-	</group>
-	<group unless="$(optenv SIMULATED 0)">
-   <!-- DEPENDS if we use PST sensors or KCL sensors ... should this be defined in the sr_move_arm ? -->	
-	 <rosparam file="$(find sr_object_manipulation_launch)/config/tactile_thresholds.yaml" command="load"/>
+  </group>
+  <group unless="$(optenv SIMULATED 0)">
+    <!-- DEPENDS if we use PST sensors or KCL sensors ... should this be defined in the sr_move_arm ? -->	
+    <rosparam file="$(find sr_object_manipulation_launch)/config/tactile_thresholds.yaml" command="load"/>
   </group>
 
 	<node name="reactive_grasp_node_right" pkg="sr_move_arm"
@@ -67,22 +68,12 @@
 	  <param name="grasp_num_tries" value="4"/>
 	</node>
 
-	<group if="$(optenv SIMULATED 0)">
-	<node pkg="sr_tactile_sensors" name="sr_tactile" type="sr_tactile_virtual_gazebo" respawn="false">
-	  <rosparam file="$(find sr_tactile_sensors)/params/sensor_names.yaml" command="load"/>
-	</node>
-  <node pkg="tf" type="static_transform_publisher" name="fixed_frame_pub_arm" args="0 0 0 0 0 0 fixed /desk_support 100" />
-	</group>
-
-     <!-- Robot state publisher: publishes tf information regarding the grasps of the hand -->
-  <node pkg="robot_state_publisher" type="state_publisher"
-        name="robot_state_publisher_grasp_target">
-    <remap from="robot_description" to="sh_description"/>
-    <remap from="joint_states" to="grasp/joint_states" />
-    <param name="publish_frequency" type="double" value="1.0" />
-    <param name="tf_prefix" type="string" value="grasp" />
-  </node>
-
+  <group if="$(optenv SIMULATED 0)">
+    <node pkg="sr_tactile_sensors" name="sr_tactile" type="sr_tactile_virtual_gazebo" respawn="false">
+      <rosparam file="$(find sr_tactile_sensors)/params/sensor_names.yaml" command="load"/>
+    </node>
+    <node pkg="tf" type="static_transform_publisher" name="fixed_frame_pub_arm" args="0 0 0 0 0 0 fixed /desk_support 100" />
+  </group>
 </launch>
 
 
