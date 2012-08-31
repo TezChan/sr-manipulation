@@ -1,6 +1,6 @@
 household_objects_database:
-  database_host: ugocupcic.dyndns.org
+  database_host: bachelet
   database_port: 5432
   database_user: willow
   database_pass: willow
-  database_name: household_objects_database
+  database_name: household_objects_electric

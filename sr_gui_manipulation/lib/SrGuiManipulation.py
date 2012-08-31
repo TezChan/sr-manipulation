@@ -103,7 +103,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
                       [box_dims.x / 2, box_dims.y / 2, box_dims.z / 2]]
         self.box_pose=box_pose
 
-        self.draw_functions.draw_rviz_box(box_mat, box_ranges, '/fixed',
+        self.draw_functions.draw_rviz_box(box_mat, box_ranges, '/world',
                                           ns='bounding box',
                                           color=[0, 0, 1], opaque=0.25, duration=60)
 
@@ -114,7 +114,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         #TODO: set up place_location
             initial_pose = PoseStamped()
             initial_pose.header.stamp = rospy.get_rostime()
-            initial_pose.header.frame_id = "/fixed"
+            initial_pose.header.frame_id = "/world"
             initial_pose.pose.position.x = 0.0#self.box_pose.pose.position.x+0.0
             initial_pose.pose.position.y = -0.1#self.box_pose.pose.position.y-0.2
             initial_pose.pose.position.z = 0.05#self.box_pose.pose.position.z+0.05
@@ -292,7 +292,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         Displays all the possible placing locations that are going to be tried.
         '''
         #try:
-        (trans_palm,rot_palm) = self.listener.lookupTransform('/fixed', '/palm', rospy.Time(0))
+        (trans_palm,rot_palm) = self.listener.lookupTransform('/world', '/palm', rospy.Time(0))
         #except:
         #    return
 
@@ -516,7 +516,7 @@ class SrGuiManipulation(QObject):
         res = 0
         try:
             #Args: detection_result reset_collision_models reset_attached_models desired_frame
-            res = self.service_tabletop_collision_map.call(self.raw_objects.detection, True, True, "/fixed")
+            res = self.service_tabletop_collision_map.call(self.raw_objects.detection, True, True, "/world")
         except rospy.ServiceException, e:
             logerr("Service did not process request: %s" % str(e))
 

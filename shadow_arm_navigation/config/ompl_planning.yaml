@@ -13,7 +13,7 @@ right_arm:
     - LBKPIECEkConfig1
   projection_evaluator: joint_state
 right_arm_cartesian:
-  parent_frame: desk_support
+  parent_frame: shadowarm_base
   physical_group: right_arm
   planner_type: RPYIKTaskSpacePlanner
   state_spaces:
@@ -46,6 +46,6 @@ right_arm_cartesian:
     - LBKPIECEkConfig1
   kinematics_solver: arm_kinematics_constraint_aware/KDLArmKinematicsPlugin
   tip_name: palm
-  root_name: desk_support
+  root_name: shadowarm_base
   projection_evaluator: joint_state
   longest_valid_segment_fraction: 0.001

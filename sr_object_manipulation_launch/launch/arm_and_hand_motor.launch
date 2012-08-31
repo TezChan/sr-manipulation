@@ -54,7 +54,7 @@
     <node pkg="sr_tactile_sensors" name="sr_tactile" type="sr_tactile_virtual_gazebo" respawn="false">
       <rosparam file="$(find sr_tactile_sensors)/params/sensor_names.yaml" command="load"/>
     </node>
-    <node pkg="tf" type="static_transform_publisher" name="fixed_frame_pub_arm" args="0 0 0 0 0 0 fixed /desk_support 100" />
+<!--    <node pkg="tf" type="static_transform_publisher" name="fixed_frame_pub_arm" args="0 0 0 0 0 0 fixed /base_link 100" /> -->
   </group>
 </launch>
 
