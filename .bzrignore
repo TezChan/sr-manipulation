@@ -5,3 +5,4 @@ sr_object_manipulation_launch/build
 sr_object_manipulation_smach/bin
 sr_object_manipulation_smach/build
 shadow_arm_navigation/bin
+sr_worlds/bin
