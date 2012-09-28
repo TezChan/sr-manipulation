@@ -120,9 +120,6 @@ class Planification(object):
             rospy.logerr( "Failed to plan "+str(e) )
             return False
 
-
-
-
     def plan_motion_cartesian_(self, goal_pose, link_name="palm"):
         self.reset_planning_scene_()
 
@@ -204,10 +201,10 @@ class Planification(object):
 
         traj = motion_plan_result.trajectory.joint_trajectory
         for index, point in enumerate(traj.points):
-            if index == 0 or index == len(traj.points) - 1:
-                point.velocities = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-            else:
-                point.velocities = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+            #if index == 0 or index == len(traj.points) - 1:
+            #    point.velocities = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            #else:
+            #    point.velocities = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
             point.time_from_start = rospy.Duration.from_sec(float(index) / 8.0)
             traj.points[index] = point
         self.send_traj_pub_.publish( traj )
