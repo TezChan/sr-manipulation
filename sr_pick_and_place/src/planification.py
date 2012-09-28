@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 #
 # Copyright 2011 Shadow Robot Company Ltd.
 #
@@ -24,6 +24,9 @@ from arm_navigation_msgs.msg import MotionPlanRequest, Shape, PositionConstraint
 from kinematics_msgs.srv import GetConstraintAwarePositionIK, GetPositionIK
 from kinematics_msgs.msg import PositionIKRequest
 from geometry_msgs.msg import PoseStamped
+from trajectory_msgs.msg import JointTrajectory
+
+import time
 
 class Planification(object):
     """
@@ -32,7 +35,8 @@ class Planification(object):
     def __init__(self, ):
         """
         """
-        self.display_traj_pub_ = rospy.Publisher("joint_path_display", DisplayTrajectory)
+        self.display_traj_pub_ = rospy.Publisher("/joint_path_display", DisplayTrajectory, latch=True)
+        self.send_traj_pub_ = rospy.Publisher("/command", JointTrajectory, latch=True)
 
         rospy.loginfo("Waiting for services /ompl_planning/plan_kinematic_path, /environment_server/set_planning_scene_diff, /shadow_right_arm_kinematics/get_constraint_aware_ik ...")
         rospy.wait_for_service("/ompl_planning/plan_kinematic_path")
@@ -56,7 +60,7 @@ class Planification(object):
         #goal.pose.position.z = 1.205
 
         goal.pose.position.x = 0.470
-        goal.pose.position.y = -0.126
+        goal.pose.position.y = -0.156
         goal.pose.position.z = 1.465
 
         goal.pose.orientation.x = 0.375
@@ -108,12 +112,14 @@ class Planification(object):
 
             if motion_plan_res.error_code.val == motion_plan_res.error_code.SUCCESS:
                 self.display_traj_( motion_plan_res )
+                self.send_traj_( motion_plan_res )
             else:
                 rospy.logerr("The planning failed: " + str(motion_plan_res.error_code.val))
 
         except rospy.ServiceException, e:
             rospy.logerr( "Failed to plan "+str(e) )
             return False
+
 
 
 
@@ -179,7 +185,7 @@ class Planification(object):
             return False
 
     def display_traj_(self, motion_plan_result):
-        print motion_plan_result
+        print "Display trajectory"
 
         traj = DisplayTrajectory()
         traj.model_id = "shadow"
@@ -188,6 +194,25 @@ class Planification(object):
         traj.trajectory = motion_plan_result.trajectory
 
         self.display_traj_pub_.publish(traj)
+
+        print "   -> trajectory published"
+        time.sleep(0.5)
+
+
+    def send_traj_(self, motion_plan_result):
+        print "Sending trajectory"
+
+        traj = motion_plan_result.trajectory.joint_trajectory
+        for index, point in enumerate(traj.points):
+            if index == 0 or index == len(traj.points) - 1:
+                point.velocities = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            else:
+                point.velocities = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+            point.time_from_start = rospy.Duration.from_sec(float(index) / 8.0)
+            traj.points[index] = point
+        self.send_traj_pub_.publish( traj )
+
+        print "   -> trajectory sent"
 
     def reset_planning_scene_(self):
         try:
@@ -205,5 +230,5 @@ if __name__ =="__main__":
     object_pose.pose.position.z = 1.2
 
     plan.plan_pickup( object_pose )
-    #rospy.spin()
+    rospy.spin()
 
