@@ -11,6 +11,8 @@
   <depend package="rospy"/>
   <depend package="actionlib"/>
   <depend package="arm_navigation_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="kinematics_msgs"/>
 
 </package>
 
