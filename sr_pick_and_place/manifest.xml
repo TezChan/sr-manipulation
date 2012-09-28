@@ -1,0 +1,17 @@
+<package>
+  <description brief="sr_pick_and_place">
+
+     sr_pick_and_place
+
+  </description>
+  <author>Ugo Cupcic</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/sr_pick_and_place</url>
+  <depend package="rospy"/>
+  <depend package="actionlib"/>
+  <depend package="arm_navigation_msgs"/>
+
+</package>
+
+
