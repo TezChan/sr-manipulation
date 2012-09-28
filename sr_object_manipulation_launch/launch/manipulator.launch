@@ -15,7 +15,7 @@
 
   <node name="sr_grasp_planner" pkg="sr_grasp_planner" type="sr_grasp_planner" respawn="false"/>
 
-  <node name="object_manipulator" pkg="object_manipulator" type="object_manipulator_node"
+ <node name="object_manipulator" pkg="object_manipulator" type="object_manipulator_node"
 	respawn="false"
 	output="screen">
     <remap from="right_arm/constraint_aware_ik" to="/shadow_right_arm_kinematics/get_constraint_aware_ik" />
