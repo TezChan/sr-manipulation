@@ -19,7 +19,7 @@
 import roslib; roslib.load_manifest("sr_pick_and_place")
 import rospy
 
-from arm_navigation_msgs.srv import GetMotionPlan, SetPlanningSceneDiff, FilterJointTrajectory, FilterJointTrajectoryRequest
+from arm_navigation_msgs.srv import GetMotionPlan, GetMotionPlanResponse, SetPlanningSceneDiff, FilterJointTrajectory, FilterJointTrajectoryRequest
 from arm_navigation_msgs.msg import MotionPlanRequest, Shape, PositionConstraint, OrientationConstraint, DisplayTrajectory, Constraints, JointConstraint, JointLimits, RobotState
 from kinematics_msgs.srv import GetConstraintAwarePositionIK
 from kinematics_msgs.msg import PositionIKRequest
@@ -39,9 +39,6 @@ class Planification(object):
     def __init__(self, ):
         """
         """
-        self.display_traj_pub_ = rospy.Publisher("/joint_path_display", DisplayTrajectory, latch=True)
-        self.send_traj_pub_ = rospy.Publisher("/command", JointTrajectory, latch=True)
-
         rospy.loginfo("Waiting for services /ompl_planning/plan_kinematic_path, /environment_server/set_planning_scene_diff, /shadow_right_arm_kinematics/get_constraint_aware_ik ...")
 
         rospy.wait_for_service("/ompl_planning/plan_kinematic_path")
@@ -54,34 +51,39 @@ class Planification(object):
         self.set_planning_scene_diff_ = rospy.ServiceProxy("/environment_server/set_planning_scene_diff", SetPlanningSceneDiff)
         self.planifier_ = rospy.ServiceProxy('/ompl_planning/plan_kinematic_path', GetMotionPlan)
         self.constraint_aware_ik_ = rospy.ServiceProxy("/shadow_right_arm_kinematics/get_constraint_aware_ik", GetConstraintAwarePositionIK)
-        self.trajectory_filter_ = rospy.ServiceProxy("/trajectory_filter_unnormalizer/filter_trajectory", FilterJointTrajectory)
-        #self.constraint_aware_ik_ = rospy.ServiceProxy("/shadow_right_arm_kinematics/get_ik", GetPositionIK)
-        self.get_joint_state_ = rospy.ServiceProxy("/getJointState", getJointState)
 
-    def plan_pickup(self, object_pose):
-        """
-        """
+        #self.standard_ik_ = rospy.ServiceProxy("/shadow_right_arm_kinematics/get_ik", GetPositionIK)
 
+
+    def plan_arm_motion(self, arm_name, planner, palm_target_pose, hand_target_posture=[]):
+        """Plan motion for the palm, eventually virtually setting the hand in the pre-grasp posture to manage grasping in small spaces
+        """
         goal = PoseStamped()
         goal.header.frame_id = "world"
-        #goal.pose.position.x = 0.399
-        #goal.pose.position.y = 0.110
-        #goal.pose.position.z = 1.205
+        
+        goal.pose=palm_target_pose.pose
+    
+        #goal.pose.position.x = 0.470
+        #goal.pose.position.y = -0.166
+        #goal.pose.position.z = 1.665
 
-        goal.pose.position.x = 0.470
-        goal.pose.position.y = -0.166
-        goal.pose.position.z = 1.665
+        #goal.pose.orientation.x = 0.375
+        #goal.pose.orientation.y = 0.155
+        #goal.pose.orientation.z = 0.844
+        #goal.pose.orientation.w = 0.351
+        
+        if(planner=="cartesianspace"):
+            result=self.plan_motion_cartesian_( arm_name, goal )
+        else:
+            result=self.plan_motion_joint_state_( arm_name, goal )
+        
+        return result
 
-        goal.pose.orientation.x = 0.375
-        goal.pose.orientation.y = 0.155
-        goal.pose.orientation.z = 0.844
-        goal.pose.orientation.w = 0.351
-
-        self.plan_motion_joint_state_( goal )
-
-    def plan_motion_joint_state_(self, goal_pose, link_name = "palm"):
+    def plan_motion_joint_state_(self, arm_name, goal_pose, link_name = "palm"):
         self.reset_planning_scene_()
 
+        motion_plan_res= GetMotionPlanResponse()
+        
         #first get the ik for the pose we want to go to
         ik_solution = None
         try:
@@ -93,24 +95,28 @@ class Planification(object):
             ik_solution = self.constraint_aware_ik_.call( req, Constraints(), rospy.Duration(5.0) )
         except rospy.ServiceException, e:
             rospy.logerr( "Failed to compute IK "+str(e) )
-            return False
+            motion_plan_res.error_code.val = motion_plan_res.error_code.NO_IK_SOLUTION
+            return motion_plan_res
 
         if ik_solution.error_code.val != ik_solution.error_code.SUCCESS:
             rospy.logerr("couldn't find an ik solution to go to: " + str(goal_pose))
-            return False
+            motion_plan_res.error_code.val = ik_solution.error_code.val
+            return motion_plan_res
 
-        motion_plan_res = None
+        #motion_plan_res = None
+        #try to plan the motion to the target joint_state
         try:
             motion_plan_request = MotionPlanRequest()
 
-            motion_plan_request.group_name = "right_arm"
+            motion_plan_request.group_name = arm_name #"right_arm"
             motion_plan_request.num_planning_attempts = 1
             motion_plan_request.planner_id = ""
             motion_plan_request.allowed_planning_time = rospy.Duration(5.0)
 
             motion_plan_request.expected_path_duration = rospy.Duration(5.0)
-            motion_plan_request.expected_path_dt = rospy.Duration(0.1)
+            motion_plan_request.expected_path_dt = rospy.Duration(0.5)
 
+            # set joint_constraints
             for target, name in zip(ik_solution.solution.joint_state.position, ik_solution.solution.joint_state.name):
                 joint_constraint = JointConstraint()
                 joint_constraint.joint_name = name
@@ -120,21 +126,19 @@ class Planification(object):
 
                 motion_plan_request.goal_constraints.joint_constraints.append(joint_constraint)
 
+            # start the planner
             motion_plan_res = self.planifier_( motion_plan_request )
 
-            if motion_plan_res.error_code.val == motion_plan_res.error_code.SUCCESS:
-                filtered_traj = self.filter_traj_(motion_plan_res)
-
-                self.display_traj_( filtered_traj )
-                self.send_traj_( filtered_traj )
-            else:
+            if motion_plan_res.error_code.val != motion_plan_res.error_code.SUCCESS:
                 rospy.logerr("The planning failed: " + str(motion_plan_res.error_code.val))
-
+                
         except rospy.ServiceException, e:
             rospy.logerr( "Failed to plan "+str(e) )
-            return False
+            motion_plan_res.error_code.val = motion_plan_res.error_code.PLANNING_FAILED
+            
+        return motion_plan_res
 
-    def plan_motion_cartesian_(self, goal_pose, link_name="palm"):
+    def plan_motion_cartesian_(self, arm_name, goal_pose, link_name="palm"):
         self.reset_planning_scene_()
 
         motion_plan_res = None
@@ -195,62 +199,6 @@ class Planification(object):
             rospy.logerr( "Failed to plan "+str(e) )
             return False
 
-    def display_traj_(self, trajectory):
-        print "Display trajectory"
-
-        traj = DisplayTrajectory()
-        traj.model_id = "shadow"
-        traj.trajectory.joint_trajectory = trajectory
-        traj.trajectory.joint_trajectory.header.frame_id = "world"
-        traj.trajectory.joint_trajectory.header.stamp = rospy.Time.now()
-        self.display_traj_pub_.publish(traj)
-
-        print "   -> trajectory published"
-        time.sleep(0.5)
-
-
-    def send_traj_(self, trajectory):
-        print "Sending trajectory"
-
-        traj = trajectory
-        #for index, point in enumerate(traj.points):
-            #if index == 0 or index == len(traj.points) - 1:
-            #    point.velocities = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-            #else:
-            #    point.velocities = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-        #    point.time_from_start = rospy.Duration.from_sec(float(index) / 8.0)
-        #    traj.points[index] = point
-        self.send_traj_pub_.publish( traj )
-
-        print "   -> trajectory sent"
-
-    def filter_traj_(self, motion_plan_res):
-        try:
-            req = FilterJointTrajectoryRequest()
-            for name in ARM_NAMES:
-                limit = JointLimits()
-                limit.joint_name = name
-                limit.min_position = -1.5
-                limit.max_position = 1.5
-                limit.has_velocity_limits = True
-                limit.max_velocity = 0.1
-                limit.has_acceleration_limits = True
-                limit.max_acceleration = 0.1
-                req.limits.append(limit)
-
-            req.trajectory = motion_plan_res.trajectory.joint_trajectory
-            req.allowed_time = rospy.Duration.from_sec( 5.0 )
-
-            res = self.get_joint_state_.call()
-            req.start_state.joint_state = res.joint_state
-
-            res = self.trajectory_filter_.call( req )
-        except rospy.ServiceException, e:
-            rospy.logerr("Failed to filter "+str(e))
-            return motion_plan_res.trajectory
-
-        return res.trajectory
-
     def reset_planning_scene_(self):
         try:
             self.set_planning_scene_diff_.call()
@@ -262,10 +210,17 @@ if __name__ =="__main__":
     plan = Planification()
 
     object_pose = PoseStamped()
-    object_pose.pose.position.x = 0.45
-    object_pose.pose.position.y = 0.16
-    object_pose.pose.position.z = 1.2
+    object_pose.pose.position.x = 0.470
+    object_pose.pose.position.y = 0.166
+    object_pose.pose.position.z = 1.665
+    
+    object_pose.pose.orientation.x = 0.375
+    object_pose.pose.orientation.y = 0.155
+    object_pose.pose.orientation.z = 0.844
+    object_pose.pose.orientation.w = 0.351
+    
 
-    plan.plan_pickup( object_pose )
+    result = plan.plan_arm_motion( "right_arm", "jointspace", object_pose )
+    rospy.logerr("got result " + str(result))
     rospy.spin()
 
