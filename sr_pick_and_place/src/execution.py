@@ -21,7 +21,7 @@ import rospy
 
 from object_manipulation_msgs.msg import Grasp, PickupGoal, PickupAction, PlaceGoal, PlaceAction
 from object_manipulation_msgs.srv import GraspPlanning, GraspPlanningRequest, GraspPlanningResponse
-from arm_navigation_msgs.srv import GetMotionPlanResponse, FilterJointTrajectory, FilterJointTrajectoryRequest
+from arm_navigation_msgs.srv import GetMotionPlanRequest, GetMotionPlanResponse, FilterJointTrajectory, FilterJointTrajectoryRequest
 from arm_navigation_msgs.msg import DisplayTrajectory, JointLimits
 from geometry_msgs.msg import PoseStamped
 from trajectory_msgs.msg import JointTrajectory
@@ -30,6 +30,7 @@ from planification import Planification
 from sr_utilities.srv import getJointState
 
 import time
+import copy
 
 ARM_NAMES = ['ShoulderJRotate', 'ShoulderJSwing', 'ElbowJSwing', 'ElbowJRotate', "WRJ1", "WRJ2"]
 
@@ -74,23 +75,59 @@ class Execution(object):
         else:
             rospy.loginfo("Got "+ str(len(grasp_planning_res.grasps)) +" grasps for this object")
                 
-        #for each grasp, check pre-grasp pose
+        #for each grasp, check path from pre-grasp pose to grasp pose first and then check motion to pre-grasp pose
+        motion_plan_res=GetMotionPlanResponse()
         for index, grasp in enumerate(grasp_planning_res.grasps):
             # extract grasp_pose
-            pre_grasp_pose_ = PoseStamped()
-            pre_grasp_pose_.pose = grasp.grasp_pose
+            grasp_pose_ = PoseStamped()
+            grasp_pose_.header.frame_id = "/world";
+            grasp_pose_.pose = grasp.grasp_pose
+           
+            #pre_grasp_pose_ = PoseStamped()
+            #pre_grasp_pose_.header.frame_id = "/world";
+            #pre_grasp_pose_.pose.position=grasp_pose_.pose.position
+            #pre_grasp_pose_.pose.orientation=grasp_pose_.pose.orientation
             
-            # add 10cm above the object to plan pre-grasp pose
-            #pre_grasp_pose_.pose.position.z = pre_grasp_pose_.pose.position.z + 0.1 #1.665
+            pre_grasp_pose_ = copy.deepcopy(grasp_pose_)
+            
+            # add desired_approach_distance along the approach vector. above the object to plan pre-grasp pose
 
-            # check and plan motion to this pre_grasp_pose
-            motion_plan_res = self.plan.plan_arm_motion( pickup_goal.arm_name, "jointspace", pre_grasp_pose_ )
-        
-            #if one is successful do not test others
-            if (motion_plan_res.error_code.val == motion_plan_res.error_code.SUCCESS):
-                rospy.loginfo("Grasp number "+str(index)+" is possible, executing it")
-                break
+            # currently add this to Z because approach vector needs to be computer somehow first
+            pre_grasp_pose_.pose.position.z = pre_grasp_pose_.pose.position.z + 0.08 
+          
+            
+            # for distance from 0 (grasp_pose) to desired_approach distance (pre_grasp_pose) test IK/Collision and save result
+            # decompose this in 10 steps by default
+            interpolated_motion_plan_res = self.plan.get_interpolated_ik_motion_plan(pre_grasp_pose_, grasp_pose_, False)
+              
+            # check the result (depending on number of steps etc...)
+            if (interpolated_motion_plan_res.error_code.val == interpolated_motion_plan_res.error_code.SUCCESS):
+                number_of_interpolated_steps=0
+                for interpolation_index, traj_error_code in enumerate(interpolated_motion_plan_res.trajectory_error_codes):
+                    if traj_error_code.val!=1:
+                        rospy.logerr("One unfeasible approach-phase step found at "+str(interpolation_index)+ "with val " + str(traj_error_code.val))
+                        break
+                    else:
+                        number_of_interpolated_steps=interpolation_index
                 
+                if number_of_interpolated_steps+1==len(interpolated_motion_plan_res.trajectory.joint_trajectory.points):
+                    rospy.loginfo("Grasp number "+str(index)+" approach is possible, checking motion plan to pre-grasp")
+                    #print interpolated_motion_plan_res
+                
+                    # check and plan motion to this pre_grasp_pose
+                    motion_plan_res = self.plan.plan_arm_motion( pickup_goal.arm_name, "jointspace", pre_grasp_pose_ )
+        
+                    #if one is successful do not test others
+                    if (motion_plan_res.error_code.val == motion_plan_res.error_code.SUCCESS):
+                        rospy.loginfo("Grasp number "+str(index)+" is possible, executing it")
+                        break
+                else:
+                    rospy.logerr("Grasp number "+str(index)+" approach is impossible")
+                    #print interpolated_motion_plan_res
+            else:
+                rospy.logerr("Grasp number "+str(index)+" approach is impossible")
+                #print interpolated_motion_plan_res
+            
         #if one is successful, compute approach (from pre-grasp to grasp)
         if (motion_plan_res.error_code.val == motion_plan_res.error_code.SUCCESS):
             #put hand in pre-grasp posture
@@ -103,6 +140,8 @@ class Execution(object):
             self.send_traj_( filtered_traj )
 
             #approach
+            time.sleep(15)
+            self.send_traj_( interpolated_motion_plan_res.trajectory.joint_trajectory )
             #grasp
         else:
             rospy.logerr("None of the grasps tested is possible")
@@ -112,6 +151,8 @@ class Execution(object):
         #straight movement above object, just for compatibility
         #check if object is grasped
         #compute straight trajectory in 6D or in 3D if it fails
+    
+   
         
                 
     def display_traj_(self, trajectory):

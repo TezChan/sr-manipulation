@@ -44,6 +44,8 @@ import trajectory_msgs.msg
 from tf import transformations
 import tf
 
+from execution import Execution
+
 import yaml
 
 class ObjectChooser(QWidget):
@@ -61,6 +63,7 @@ class ObjectChooser(QWidget):
         self.pickup_result  = None
         self.listener       = tf.TransformListener()       
         self.grasp_display_publisher = rospy.Publisher("/grasp_display", Grasp)
+        self.pickupservice = Execution()
 
     def draw(self):
         self.frame = QFrame(self)
@@ -161,8 +164,8 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         pickup_goal.ignore_collisions = True
 
         pickup_goal.arm_name = "right_arm"
-        #pickup_goal.desired_approach_distance = 0.05
-        #pickup_goal.min_approach_distance = 0.02
+        #pickup_goal.desired_approach_distance = 0.08 This does not exist anymore in the message
+        #pickup_goal.min_approach_distance = 0.02 This does not exist anymore in the message
 
         direction = Vector3Stamped()
         direction.header.stamp = rospy.get_rostime()
@@ -178,17 +181,20 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         pickup_goal.use_reactive_lift = True;
         pickup_goal.use_reactive_execution = True;
 
-        pickup_client = actionlib.SimpleActionClient('/object_manipulator/object_manipulator_pickup', PickupAction)
-        pickup_client.wait_for_server()
-        rospy.loginfo("Pickup server ready")
+        self.pickupservice.pick(pickup_goal)
+        
+        #pickup_client = actionlib.SimpleActionClient('/object_manipulator/object_manipulator_pickup', PickupAction)
+        #pickup_client.wait_for_server()
+        #rospy.loginfo("Pickup server ready")
 
-        pickup_client.send_goal(pickup_goal)
+        #pickup_client.send_goal(pickup_goal)
         #TODO: change this when using the robot
-        pickup_client.wait_for_result(timeout=rospy.Duration.from_sec(3600.0))
+        #pickup_client.wait_for_result(timeout=rospy.Duration.from_sec(3600.0))
         loginfo("Got Pickup results")
-        self.pickup_result = pickup_client.get_result()
+        #self.pickup_result = pickup_client.get_result()
 
         #print "Pickup result: "+str(self.pickup_result)
+        '''
         if pickup_client.get_state() != GoalStatus.SUCCEEDED:
             rospy.logerr("The pickup action has failed: " + str(self.pickup_result.manipulation_result.value) )
             QMessageBox.warning(self, "Warning",
@@ -197,6 +203,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
                 if tested_grasp_result.result_code==7:
                   self.grasp_display_publisher.publish(tested_grasp)
             return -1
+        '''
         return 0
 
     def place_object(self, graspable_object, graspable_object_name, object_name, list_of_poses ):
@@ -486,7 +493,7 @@ class SrGuiManipulation(QObject):
         except rospy.ServiceException, e:
             print "Service did not process request: %s" % str(e)
 
-        print self.raw_objects
+        #print self.raw_objects
         # Take a new collision map + add the detected objects to the collision
         # map and get graspable objects from them
         tabletop_collision_map_res = self.process_collision_map()

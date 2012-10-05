@@ -19,8 +19,10 @@
 import roslib; roslib.load_manifest("sr_pick_and_place")
 import rospy
 
-from arm_navigation_msgs.srv import GetMotionPlan, GetMotionPlanResponse, SetPlanningSceneDiff, FilterJointTrajectory, FilterJointTrajectoryRequest
+from arm_navigation_msgs.srv import GetMotionPlan, GetMotionPlanRequest, GetMotionPlanResponse, SetPlanningSceneDiff, FilterJointTrajectory, FilterJointTrajectoryRequest
 from arm_navigation_msgs.msg import MotionPlanRequest, Shape, PositionConstraint, OrientationConstraint, DisplayTrajectory, Constraints, JointConstraint, JointLimits, RobotState
+from interpolated_ik_motion_planner.srv import SetInterpolatedIKMotionPlanParams
+#import interpolated_ik_motion_planner.ik_utilities as ik_utilities
 from kinematics_msgs.srv import GetConstraintAwarePositionIK
 from kinematics_msgs.msg import PositionIKRequest
 from geometry_msgs.msg import PoseStamped
@@ -28,6 +30,7 @@ from trajectory_msgs.msg import JointTrajectory
 from sr_utilities.srv import getJointState
 
 import time
+import math
 
 ARM_NAMES = ['ShoulderJRotate', 'ShoulderJSwing', 'ElbowJSwing', 'ElbowJRotate', "WRJ1", "WRJ2"]
 ARM_IK_SEED = [-0.0011556513918362654, 0.33071140061761284, 1.9152039367468952, 0.008440334101951663, 0.0, 0.0]
@@ -44,6 +47,8 @@ class Planification(object):
         rospy.wait_for_service("/ompl_planning/plan_kinematic_path")
         rospy.wait_for_service("/environment_server/set_planning_scene_diff")
         rospy.wait_for_service("/shadow_right_arm_kinematics/get_constraint_aware_ik")
+        rospy.wait_for_service("/r_interpolated_ik_motion_plan_set_params")
+        rospy.wait_for_service("/r_interpolated_ik_motion_plan")
         rospy.wait_for_service("/trajectory_filter_unnormalizer/filter_trajectory")
         rospy.wait_for_service("/getJointState")
         rospy.loginfo("  OK services found")
@@ -51,6 +56,9 @@ class Planification(object):
         self.set_planning_scene_diff_ = rospy.ServiceProxy("/environment_server/set_planning_scene_diff", SetPlanningSceneDiff)
         self.planifier_ = rospy.ServiceProxy('/ompl_planning/plan_kinematic_path', GetMotionPlan)
         self.constraint_aware_ik_ = rospy.ServiceProxy("/shadow_right_arm_kinematics/get_constraint_aware_ik", GetConstraintAwarePositionIK)
+        self.interpolated_ik_params_srv = rospy.ServiceProxy('/r_interpolated_ik_motion_plan_set_params', SetInterpolatedIKMotionPlanParams)
+        self.interpolated_ik_srv = rospy.ServiceProxy('/r_interpolated_ik_motion_plan', GetMotionPlan)
+        #self.ik_utils = ik_utilities.IKUtilities('right',None,0) # do not wait for service this is not needed for us
 
         #self.standard_ik_ = rospy.ServiceProxy("/shadow_right_arm_kinematics/get_ik", GetPositionIK)
 
@@ -131,7 +139,15 @@ class Planification(object):
 
             if motion_plan_res.error_code.val != motion_plan_res.error_code.SUCCESS:
                 rospy.logerr("The planning failed: " + str(motion_plan_res.error_code.val))
-                
+            else:
+                # compute velocity and appropriate times
+                (times, vels) = self.trajectory_times_and_vels(motion_plan_res.trajectory, [.1]*6, [.2]*6)
+                #print times
+                #print vels
+                for i in range(len(motion_plan_res.trajectory.joint_trajectory.points)):
+                    motion_plan_res.trajectory.joint_trajectory.points[i].velocities = vels[i]
+                    motion_plan_res.trajectory.joint_trajectory.points[i].time_from_start = rospy.Duration(times[i])
+                #print motion_plan_res.trajectory.joint_trajectory
         except rospy.ServiceException, e:
             rospy.logerr( "Failed to plan "+str(e) )
             motion_plan_res.error_code.val = motion_plan_res.error_code.PLANNING_FAILED
@@ -199,6 +215,129 @@ class Planification(object):
             rospy.logerr( "Failed to plan "+str(e) )
             return False
 
+    def get_interpolated_ik_motion_plan(self, start_pose, target_pose, collision_check=False,
+                                        steps_before_abort=1, num_steps=0,
+                                        frame='shadowarm_base', max_joint_vels=[0.1]*6, max_joint_accs=[0.5]*6):
+                                        
+        ik_motion_plan_res = self.interpolated_ik_params_srv(num_steps,
+                                              math.pi/7.0,
+                                              1,
+                                              steps_before_abort,
+                                              0.02,
+                                              0.1,
+                                              collision_check,
+                                              1, #start from end
+                                              max_joint_vels,
+                                              max_joint_accs)
+                                             
+
+        ik_motion_plan_req = GetMotionPlanRequest()
+        ik_motion_plan_req.motion_plan_request.start_state.joint_state.name = ARM_NAMES
+        
+        #joint_state_res = self.get_joint_state_.call()
+        #start_angles = res.joint_state.positions # one cannot use this directly it contains not only arm but also fingers            
+        ik_motion_plan_req.motion_plan_request.start_state.joint_state.position = [0.3]*6 #start_angles
+        ik_motion_plan_req.motion_plan_request.start_state.multi_dof_joint_state.poses = [start_pose.pose]
+        ik_motion_plan_req.motion_plan_request.start_state.multi_dof_joint_state.child_frame_ids = ["palm"]
+        ik_motion_plan_req.motion_plan_request.start_state.multi_dof_joint_state.frame_ids = [start_pose.header.frame_id]
+        
+        pos_constraint = PositionConstraint()
+        pos_constraint.position = target_pose.pose.position
+        pos_constraint.header.frame_id = target_pose.header.frame_id
+        ik_motion_plan_req.motion_plan_request.goal_constraints.position_constraints = [pos_constraint]
+        
+        orient_constraint = OrientationConstraint()
+        orient_constraint.orientation = target_pose.pose.orientation
+        orient_constraint.header.frame_id = target_pose.header.frame_id
+        ik_motion_plan_req.motion_plan_request.goal_constraints.orientation_constraints = [orient_constraint]
+        
+        #if ordered_collision_operations is not None:
+        #    ik_motion_plan_req.motion_plan_request.ordered_collision_operations = ordered_collision_operations
+            
+        ik_motion_plan_res = self.interpolated_ik_srv(ik_motion_plan_req)
+        return ik_motion_plan_res
+      
+    def trajectory_times_and_vels(self, traj, max_joint_vels = [.2]*6, max_joint_accs = [.5]*6):
+
+        #min time for each segment
+        min_segment_time = .01
+        
+        if not traj:
+            rospy.logdebug("traj path was empty!")
+            return([], [])
+        traj_length = len(traj.joint_trajectory.points)
+        num_joints = len(traj.joint_trajectory.joint_names)
+
+        #sanity-check max vels and accelerations
+        if not max_joint_vels:
+            max_joint_vels = [.2]*7
+        elif len(max_joint_vels) != num_joints:
+            rospy.logerr("invalid max_joint_vels!")
+            return ([], [])
+        if not max_joint_accs:
+            max_joint_accs = [.5]*7
+        elif len(max_joint_accs) != num_joints:
+            rospy.logerr("invalid max_joint_accs!")
+            return ([], [])
+        for ind in range(num_joints):
+            if max_joint_vels[ind] <= 0.:
+                max_joint_vels[ind] = .2
+            if max_joint_accs[ind] <= 0.:
+                max_joint_accs[ind] = .5
+            
+        vels = [[None]*num_joints for i in range(traj_length)]
+        
+        #give the trajectory a bit of time to start
+        segment_times = [None]*traj_length
+        segment_times[0] = 0.05 
+
+        #find vaguely appropriate segment times, assuming that we're traveling at max_joint_vels at the fastest joint
+        for ind in range(traj_length-1):
+            joint_diffs = [math.fabs(traj.joint_trajectory.points[ind+1].positions[x]-traj.joint_trajectory.points[ind].positions[x]) for x in range(num_joints)]
+            joint_times = [diff/vel for (diff, vel) in zip(joint_diffs, max_joint_vels)]
+            segment_times[ind+1] = max(joint_times+[min_segment_time])
+            
+        #set the initial and final velocities to 0 for all joints
+        vels[0] = [0.]*num_joints
+        vels[traj_length-1] = [0.]*num_joints
+
+        #also set the velocity where any joint changes direction to be 0 for that joint
+        #and otherwise use the average velocity (assuming piecewise-linear velocities for the segments before and after)
+        for ind in range(1, traj_length-1):
+            for joint in range(num_joints):
+                diff0 = traj.joint_trajectory.points[ind].positions[joint]-traj.joint_trajectory.points[ind-1].positions[joint]
+                diff1 = traj.joint_trajectory.points[ind+1].positions[joint]-traj.joint_trajectory.points[ind].positions[joint]
+                if (diff0>0 and diff1<0) or (diff0<0 and diff1>0):
+                    vels[ind][joint] = 0.
+                else:
+                    vel0 = diff0/segment_times[ind]
+                    vel1 = diff1/segment_times[ind+1]
+                    vels[ind][joint] = (vel0+vel1)/2.
+
+        #increase the times if the desired velocities would require overly large accelerations
+        for ind in range(1, traj_length):
+            for joint in range(num_joints):
+                veldiff = math.fabs(vels[ind][joint]-vels[ind-1][joint])
+                acc = veldiff/segment_times[ind]
+                try:
+                    if acc > max_joint_accs[joint]:
+                        segment_times[ind] = veldiff/max_joint_accs[joint]
+                except:
+                    pdb.set_trace()
+
+        #turn the segment_times into waypoint times (cumulative)
+        times = [None]*traj_length
+        times[0] = segment_times[0]
+        for ind in range(1, traj_length):
+            try:
+                times[ind] = times[ind-1]+segment_times[ind]
+            except:
+                rospy.logerr("could not add segment time")
+                continue
+
+        #return the times and velocities
+        return (times, vels)
+        
     def reset_planning_scene_(self):
         try:
             self.set_planning_scene_diff_.call()
