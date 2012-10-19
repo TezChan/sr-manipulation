@@ -181,7 +181,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         pickup_goal.use_reactive_lift = True;
         pickup_goal.use_reactive_execution = True;
 
-        self.pickupservice.pick(pickup_goal)
+        pickresult = self.pickupservice.pick(pickup_goal)
         
         #pickup_client = actionlib.SimpleActionClient('/object_manipulator/object_manipulator_pickup', PickupAction)
         #pickup_client.wait_for_server()
@@ -204,6 +204,12 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
                   self.grasp_display_publisher.publish(tested_grasp)
             return -1
         '''
+        
+        if pickresult>=0:
+            loginfo("Pick succeeded, lifting")
+            self.pickupservice.lift(0.05)
+        else:
+            loginfo("Pick failed")
         return 0
 
     def place_object(self, graspable_object, graspable_object_name, object_name, list_of_poses ):

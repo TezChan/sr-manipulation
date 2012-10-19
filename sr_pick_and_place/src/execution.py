@@ -24,13 +24,16 @@ from object_manipulation_msgs.srv import GraspPlanning, GraspPlanningRequest, Gr
 from object_manipulation_msgs.msg import GraspHandPostureExecutionAction ,GraspHandPostureExecutionGoal
 from arm_navigation_msgs.srv import GetMotionPlanRequest, GetMotionPlanResponse, FilterJointTrajectory, FilterJointTrajectoryRequest
 from arm_navigation_msgs.msg import DisplayTrajectory, JointLimits
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Point,Quaternion
 from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray
 from trajectory_msgs.msg import JointTrajectory
 from sr_utilities.srv import getJointState
 from planification import Planification
 from sr_utilities.srv import getJointState
 import actionlib
+
+from tf import transformations
+import tf
 
 import time
 import copy
@@ -62,6 +65,8 @@ class Execution(object):
         self.hand_posture_execution_actionclient_ = actionlib.SimpleActionClient('/right_arm/hand_posture_execution', GraspHandPostureExecutionAction)
         self.hand_posture_execution_actionclient_.wait_for_server()
         rospy.loginfo("hand_posture_execution server ready")
+        
+        self.listener       = tf.TransformListener()  
 
                 
     def pick(self,pickup_goal):
@@ -77,7 +82,7 @@ class Execution(object):
         # process grasp planning result
         if (grasp_planning_res.error_code.value != grasp_planning_res.error_code.SUCCESS):
             rospy.logerr("No grasp found for this object, we will generate some, but only when the node is ready for that !")
-            return 
+            return -1
         else:
             rospy.loginfo("Got "+ str(len(grasp_planning_res.grasps)) +" grasps for this object")
                 
@@ -143,7 +148,7 @@ class Execution(object):
             if self.pre_grasp_exec(grasp_to_execute_)<0:
                 QMessageBox.warning(self, "Warning",
                     "Pre-grasp action failed: ")
-                return
+                return -1
                     
             #go there 
             # filter the trajectory
@@ -163,15 +168,70 @@ class Execution(object):
             if self.grasp_exec(grasp_to_execute_)<0:
                 QMessageBox.warning(self, "Warning",
                     "Grasp action failed: ")
-                return
+                return -1
         else:
             rospy.logerr("None of the grasps tested is possible")
+            return -1
+        return 0
               
-        
-    #def lift(self, target_height):
+    def lift(self, target_lift_distance):
         #straight movement above object, just for compatibility
+        
         #check if object is grasped
+        
+        # get current hand pose
+        self.listener.waitForTransform('/world', '/palm', rospy.Time(), rospy.Duration(1.0))
+        try:
+            (trans,rot) = self.listener.lookupTransform('/world', '/palm', rospy.Time())
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            rospy.logerr("Cannot get current palm pose")
+            return
+        
+        current_pose_= PoseStamped()
+        current_pose_.header.frame_id = "/world"
+        current_pose_.pose.position = Point(trans[0],trans[1],trans[2])
+        current_pose_.pose.orientation = Quaternion(rot[0],rot[1],rot[2],rot[3])
+        
+        # prepare target pose
+        target_pose_=PoseStamped()
+        target_pose_.header.frame_id = "/world"
+        target_pose_.pose.position = Point(trans[0],trans[1],trans[2]+target_lift_distance)
+        target_pose_.pose.orientation = Quaternion(rot[0],rot[1],rot[2],rot[3]) #keep same orientation for the first test
+           
         #compute straight trajectory in 6D or in 3D if it fails
+        # for distance from 0 (grasp_pose) to desired_height test IK/Collision and save result
+        # decompose this in X steps depending on distance to do and max speed
+        interpolated_motion_plan_res = self.plan.get_interpolated_ik_motion_plan(current_pose_, target_pose_, False)
+          
+        # check the result (depending on number of steps etc...)
+        if (interpolated_motion_plan_res.error_code.val == interpolated_motion_plan_res.error_code.SUCCESS):
+            number_of_interpolated_steps=0
+            # check if one approach trajectory is feasible
+            for interpolation_index, traj_error_code in enumerate(interpolated_motion_plan_res.trajectory_error_codes):
+                if traj_error_code.val!=1:
+                    rospy.logerr("One unfeasible lift step found at "+str(interpolation_index)+ "with val " + str(traj_error_code.val))
+                    break
+                else:
+                    number_of_interpolated_steps=interpolation_index
+            
+            # if trajectory is feasible then plan reach motion to pre-grasp pose
+            if number_of_interpolated_steps+1==len(interpolated_motion_plan_res.trajectory.joint_trajectory.points):
+                rospy.loginfo("lift is possible")
+            else:
+                rospy.logerr("lift is impossible")
+                print interpolated_motion_plan_res
+                return 
+        else:
+            rospy.logerr("lift planning failed")
+            print interpolated_motion_plan_res
+            return 
+        
+        self.send_traj_( interpolated_motion_plan_res.trajectory.joint_trajectory )
+        time.sleep(10) # TODO use actionlib here
+        return 
+            
+        
+        
     
     def pre_grasp_exec(self, grasp,timeout_sec=10.0):
       

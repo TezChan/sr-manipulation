@@ -253,7 +253,8 @@ class Planification(object):
         
         #if ordered_collision_operations is not None:
         #    ik_motion_plan_req.motion_plan_request.ordered_collision_operations = ordered_collision_operations
-            
+        rospy.logerr("ik req")
+        print ik_motion_plan_req
         ik_motion_plan_res = self.interpolated_ik_srv(ik_motion_plan_req)
         return ik_motion_plan_res
       
