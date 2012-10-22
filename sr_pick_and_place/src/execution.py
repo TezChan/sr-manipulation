@@ -24,6 +24,7 @@ from object_manipulation_msgs.srv import GraspPlanning, GraspPlanningRequest, Gr
 from object_manipulation_msgs.msg import GraspHandPostureExecutionAction ,GraspHandPostureExecutionGoal
 from arm_navigation_msgs.srv import GetMotionPlanRequest, GetMotionPlanResponse, FilterJointTrajectory, FilterJointTrajectoryRequest
 from arm_navigation_msgs.msg import DisplayTrajectory, JointLimits
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
 from geometry_msgs.msg import PoseStamped, Point,Quaternion
 from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray
 from trajectory_msgs.msg import JointTrajectory
@@ -62,11 +63,17 @@ class Execution(object):
         self.get_joint_state_ = rospy.ServiceProxy("/getJointState", getJointState)
         self.trajectory_filter_ = rospy.ServiceProxy("/trajectory_filter_unnormalizer/filter_trajectory", FilterJointTrajectory)
         self.grasp_planning_service_ = rospy.ServiceProxy("/objects_database_node/database_grasp_planning", GraspPlanning)
+        # access hand_posture execution actionlib
         self.hand_posture_execution_actionclient_ = actionlib.SimpleActionClient('/right_arm/hand_posture_execution', GraspHandPostureExecutionAction)
         self.hand_posture_execution_actionclient_.wait_for_server()
         rospy.loginfo("hand_posture_execution server ready")
         
-        self.listener       = tf.TransformListener()  
+        # access arm_movement actionlib
+        self.joint_spline_trajectory_actionclient_ = actionlib.SimpleActionClient('/r_arm_controller/joint_trajectory_action', FollowJointTrajectoryAction)
+        self.joint_spline_trajectory_actionclient_.wait_for_server()
+        rospy.loginfo("joint_spline_trajectory server ready")
+        
+        self.listener = tf.TransformListener()  
 
                 
     def pick(self,pickup_goal):
@@ -156,12 +163,18 @@ class Execution(object):
 
             self.display_traj_( filtered_traj )
             
-            # reach pregrasp pose
-            self.send_traj_( filtered_traj )
-            time.sleep(20) # TODO use actionlib here
+            # reach pregrasp pose         
+            if self.send_traj_( filtered_traj )<0:
+                QMessageBox.warning(self, "Warning",
+                    "Reach trajectory execution failed: ")
+                return -1
+            #time.sleep(20) # TODO use actionlib here
             
             # approach 
-            self.send_traj_( interpolated_motion_plan_res.trajectory.joint_trajectory )
+            if self.send_traj_( interpolated_motion_plan_res.trajectory.joint_trajectory )<0:
+                QMessageBox.warning(self, "Warning",
+                    "Approach trajectory execution failed: ")
+                return -1
             time.sleep(10) # TODO use actionlib here
             
             #grasp
@@ -313,18 +326,21 @@ class Execution(object):
         
     def send_traj_(self, trajectory):
         print "Sending trajectory"
-
-        traj = trajectory
-        for index, point in enumerate(traj.points):
-            #if index == 0 or index == len(traj.points) - 1:
-            #    point.velocities = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-            #else:
-            #    point.velocities = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-            point.time_from_start = rospy.Duration.from_sec(float(index) / 8.0)
-        #    traj.points[index] = point
-        self.send_traj_pub_.publish( traj )
-
-        print "   -> trajectory sent"
+        #prepare goal
+        trajgoal = FollowJointTrajectoryGoal()
+        trajgoal.trajectory = trajectory
+        # send goal
+        self.joint_spline_trajectory_actionclient_.send_goal(trajgoal)
+        # wait for result up to 30 seconds
+        self.joint_spline_trajectory_actionclient_.wait_for_result(timeout=rospy.Duration.from_sec(40))
+        # analyze result
+        joint_spline_trajectory_result_ = self.joint_spline_trajectory_actionclient_.get_result()
+        if self.joint_spline_trajectory_actionclient_.get_state() != GoalStatus.SUCCEEDED:
+            rospy.logerr("The joint_trajectory action has failed: " + str(joint_spline_trajectory_result_.error_code) )
+            return -1
+        else:
+            rospy.loginfo("The joint_trajectory action has succeeded")
+            return 0
         
 if __name__ =="__main__":
     rospy.init_node("execution")

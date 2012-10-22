@@ -217,7 +217,7 @@ class Planification(object):
 
     def get_interpolated_ik_motion_plan(self, start_pose, target_pose, collision_check=False,
                                         steps_before_abort=1, num_steps=0,
-                                        frame='shadowarm_base', max_joint_vels=[0.1]*6, max_joint_accs=[0.5]*6):
+                                        frame='shadowarm_base', max_joint_vels=[0.1]*6, max_joint_accs=[0.3]*6):
                                         
         ik_motion_plan_res = self.interpolated_ik_params_srv(num_steps,
                                               math.pi/7.0,
@@ -231,6 +231,7 @@ class Planification(object):
                                               max_joint_accs)
                                              
 
+        self.reset_planning_scene_()
         ik_motion_plan_req = GetMotionPlanRequest()
         ik_motion_plan_req.motion_plan_request.start_state.joint_state.name = ARM_NAMES
         
