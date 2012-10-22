@@ -34,7 +34,7 @@ from tabletop_collision_map_processing.srv import TabletopCollisionMapProcessing
 from household_objects_database_msgs.srv import GetModelDescription
 import object_manipulator.draw_functions as draw_functions
 from object_manipulation_msgs.srv import FindClusterBoundingBox, FindClusterBoundingBoxRequest
-from object_manipulation_msgs.msg import Grasp, PickupGoal, PickupAction, PlaceGoal, PlaceAction
+from object_manipulation_msgs.msg import Grasp, PickupGoal, PickupAction, PickupResult, PlaceGoal, PlaceAction, ManipulationResult
 from object_manipulator.convert_functions import *
 from geometry_msgs.msg import Vector3Stamped, PoseStamped, Pose
 import actionlib
@@ -118,18 +118,19 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
             initial_pose = PoseStamped()
             initial_pose.header.stamp = rospy.get_rostime()
             initial_pose.header.frame_id = "/world"
-            initial_pose.pose.position.x = 0.0#self.box_pose.pose.position.x+0.0
-            initial_pose.pose.position.y = -0.1#self.box_pose.pose.position.y-0.2
-            initial_pose.pose.position.z = 0.05#self.box_pose.pose.position.z+0.05
+            initial_pose.pose.position.x = self.box_pose.pose.position.x+0.0
+            initial_pose.pose.position.y = self.box_pose.pose.position.y-0.2
+            initial_pose.pose.position.z = self.box_pose.pose.position.z+0.05
             q=transformations.quaternion_about_axis(-0.05, (0,0,1))
-            initial_pose.pose.orientation.x = q[0]
-            initial_pose.pose.orientation.y = q[1]
-            initial_pose.pose.orientation.z = q[2]
-            initial_pose.pose.orientation.w = q[3]
+            initial_pose.pose.orientation.x = box_pose.pose.orientation.x #q[0]
+            initial_pose.pose.orientation.y = box_pose.pose.orientation.y#q[1]
+            initial_pose.pose.orientation.z = box_pose.pose.orientation.z#q[2]
+            initial_pose.pose.orientation.w = box_pose.pose.orientation.w#q[3]
 
             self.list_of_poses = self.compute_list_of_poses(initial_pose, graspable_object)
 
             self.place_object(graspable_object, self.object.graspable_object_name, self.object_name, self.list_of_poses)
+            
 
     def place_click(self):
         initial_pose = PoseStamped()
@@ -181,7 +182,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         pickup_goal.use_reactive_lift = True;
         pickup_goal.use_reactive_execution = True;
 
-        pickresult = self.pickupservice.pick(pickup_goal)
+        self.pickup_result = self.pickupservice.pick(pickup_goal)
         
         #pickup_client = actionlib.SimpleActionClient('/object_manipulator/object_manipulator_pickup', PickupAction)
         #pickup_client.wait_for_server()
@@ -205,8 +206,8 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
             return -1
         '''
         
-        if pickresult>=0:
-            loginfo("Pick succeeded, lifting")
+        if self.pickup_result.manipulation_result.value == ManipulationResult.SUCCESS:
+            loginfo("Pick succeeded, now lifting")
             self.pickupservice.lift(0.05)
         else:
             loginfo("Pick failed")
@@ -259,7 +260,9 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         #we are not using tactile based placing
         place_goal.use_reactive_place = False
 
-        place_client = actionlib.SimpleActionClient('/object_manipulator/object_manipulator_place', PlaceAction)
+
+        placeresult = self.pickupservice.place(place_goal)
+        '''place_client = actionlib.SimpleActionClient('/object_manipulator/object_manipulator_place', PlaceAction)
         place_client.wait_for_server()
         rospy.loginfo("Place server ready")
 
@@ -274,6 +277,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         if place_client.get_state() != GoalStatus.SUCCEEDED:
             rospy.logerr("The place action has failed: " + str(place_result.manipulation_result.value) )
         print place_result
+        '''
 
     def compute_list_of_poses(self, initial_pose, graspable_object, rect_w=0.10, rect_h=0.10, resolution=0.02):
         '''
