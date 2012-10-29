@@ -23,9 +23,9 @@ from object_manipulation_msgs.msg import Grasp, PickupGoal, PickupResult, Pickup
 from object_manipulation_msgs.srv import GraspPlanning, GraspPlanningRequest, GraspPlanningResponse
 from object_manipulation_msgs.msg import GraspHandPostureExecutionAction ,GraspHandPostureExecutionGoal
 from arm_navigation_msgs.srv import GetMotionPlanRequest, GetMotionPlanResponse, FilterJointTrajectory, FilterJointTrajectoryRequest
-from arm_navigation_msgs.msg import DisplayTrajectory, JointLimits
+from arm_navigation_msgs.msg import DisplayTrajectory, JointLimits, AttachedCollisionObject, CollisionObjectOperation, Shape
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
-from geometry_msgs.msg import PoseStamped, Point,Quaternion
+from geometry_msgs.msg import PoseStamped, Point,Quaternion,Pose
 from actionlib_msgs.msg import GoalID, GoalStatus, GoalStatusArray
 from trajectory_msgs.msg import JointTrajectory
 from sr_utilities.srv import getJointState
@@ -53,6 +53,8 @@ class Execution(object):
 
         self.display_traj_pub_ = rospy.Publisher("/joint_path_display", DisplayTrajectory, latch=True)
         self.send_traj_pub_ = rospy.Publisher("/command", JointTrajectory, latch=True)
+        self.att_object_in_map_pub_=  rospy.Publisher("/attached_collision_object", AttachedCollisionObject,latch=True)
+        
         
         rospy.loginfo("Waiting for services  /getJointState, /trajectory_filter_unnormalizer/filter_trajectory, /database_grasp_planning")
         rospy.wait_for_service("/getJointState")
@@ -73,6 +75,8 @@ class Execution(object):
         self.joint_spline_trajectory_actionclient_.wait_for_server()
         rospy.loginfo("joint_spline_trajectory server ready")
         
+        
+        
         self.listener = tf.TransformListener()  
 
     def pick(self,pickup_goal):
@@ -84,7 +88,7 @@ class Execution(object):
         grasp_planning_req = GraspPlanningRequest()
         grasp_planning_req.arm_name = pickup_goal.arm_name
         grasp_planning_req.target = pickup_goal.target     
-
+        object_to_attach = pickup_goal.collision_object_name
         # call grasp planning service
         grasp_planning_res = self.grasp_planning_service_.call(grasp_planning_req) 
         #print grasp_planning_res
@@ -95,6 +99,8 @@ class Execution(object):
             return pickresult
         else:
             rospy.loginfo("Got "+ str(len(grasp_planning_res.grasps)) +" grasps for this object")
+            
+        # for each grasp, generate rotational symmetric grasps around the object (this is already in the DB for the CokeCan but should be removed and done online)
                 
         #for each grasp, check path from pre-grasp pose to grasp pose first and then check motion to pre-grasp pose
         motion_plan_res=GetMotionPlanResponse()
@@ -148,16 +154,12 @@ class Execution(object):
             else:
                 rospy.logerr("Grasp number "+str(index)+" approach is impossible")
                 #print interpolated_motion_plan_res
-        
-        
-        # check and plan motion to this pre_grasp_pose
-        #motion_plan_res = self.plan.plan_arm_motion( pickup_goal.arm_name, "jointspace", pre_grasp_pose_ )
-        
+        # execution part       
         if (motion_plan_res.error_code.val == motion_plan_res.error_code.SUCCESS):
             #put hand in pre-grasp posture
             if self.pre_grasp_exec(grasp_to_execute_)<0:
-                QMessageBox.warning(self, "Warning",
-                    "Pre-grasp action failed: ")
+                #QMessageBox.warning(self, "Warning",
+                #    "Pre-grasp action failed: ")
                 pickresult.manipulation_result.value = ManipulationResult.FAILED
                 return pickresult
                     
@@ -169,8 +171,8 @@ class Execution(object):
             
             # reach pregrasp pose         
             if self.send_traj_( filtered_traj )<0:
-                QMessageBox.warning(self, "Warning",
-                    "Reach trajectory execution failed: ")
+                #QMessageBox.warning(self, "Warning",
+                #    "Reach trajectory execution failed: ")
                 pickresult.manipulation_result.value = ManipulationResult.FAILED
                 return pickresult
             #time.sleep(20) # TODO use actionlib here
@@ -178,19 +180,44 @@ class Execution(object):
             
             # approach 
             if self.send_traj_( interpolated_motion_plan_res.trajectory.joint_trajectory )<0:
-                QMessageBox.warning(self, "Warning",
-                    "Approach trajectory execution failed: ")
+                #QMessageBox.warning(self, "Warning",
+                #    "Approach trajectory execution failed: ")
                 pickresult.manipulation_result.value = ManipulationResult.FAILED
                 return pickresult
             time.sleep(10) # TODO use actionlib here
             
             #grasp
             if self.grasp_exec(grasp_to_execute_)<0:
-                QMessageBox.warning(self, "Warning",
-                    "Grasp action failed: ")
+                #QMessageBox.warning(self, "Warning",
+                #    "Grasp action failed: ")
                 pickresult.manipulation_result.value = ManipulationResult.FAILED
                 return pickresult
             time.sleep(10) # TODO use actionlib here
+            print "we now attach the object"
+            
+            att_object = AttachedCollisionObject()
+            att_object.link_name = "palm"
+            att_object.object.id = object_to_attach
+            att_object.object.operation.operation = CollisionObjectOperation.ATTACH_AND_REMOVE_AS_OBJECT
+            att_object.object.header.frame_id = "palm"
+            att_object.object.header.stamp = rospy.Time.now()
+            object = Shape()
+            object.type = Shape.CYLINDER
+            object.dimensions.append(.03)
+            object.dimensions.append(0.1)
+            pose = Pose()
+            pose.position.x = 0.0
+            pose.position.y = -0.06
+            pose.position.z = 0.06
+            pose.orientation.x = 0
+            pose.orientation.y = 0
+            pose.orientation.z = 0
+            pose.orientation.w = 1
+            att_object.object.shapes.append(object)
+            att_object.object.poses.append(pose);
+            att_object.touch_links= ["ffdistal","mfdistal","rfdistal","lfdistal","thdistal","ffmiddle","mfmiddle","rfmiddle","lfmiddle","thmiddle","ffproximal","mfproximal","rfproximal","lfproximal","thproximal","palm","lfmetacarpal","thbase"]
+            self.att_object_in_map_pub_.publish(att_object)
+            print "attach object published"
         else:
             rospy.logerr("None of the grasps tested is possible")
             pickresult.manipulation_result.value = ManipulationResult.UNFEASIBLE
@@ -259,7 +286,7 @@ class Execution(object):
         target_pose_to_execute_ = PoseStamped()
         #for location, check path from approach pose to release pose first and then check motion to approach pose
         motion_plan_res=GetMotionPlanResponse()
-        
+        object_to_attach = place_goal.collision_object_name
         # get current hand pose
         self.listener.waitForTransform('/world', '/palm', rospy.Time(), rospy.Duration(1.0))
         try:
@@ -280,7 +307,7 @@ class Execution(object):
             #compute straight trajectory to approach distance
             target_approach_pose_= PoseStamped()
             target_approach_pose_.header.frame_id = "/world"
-            target_approach_pose_.pose.position = Point(target_pose_.pose.position.x,target_pose_.pose.position.x,target_pose_.pose.position.x+place_goal.approach.desired_distance)
+            target_approach_pose_.pose.position = Point(target_pose_.pose.position.x,target_pose_.pose.position.y,target_pose_.pose.position.z+place_goal.approach.desired_distance)
             target_approach_pose_.pose.orientation = Quaternion(target_pose_.pose.orientation.x,target_pose_.pose.orientation.y,target_pose_.pose.orientation.z,target_pose_.pose.orientation.w) #keep same orientation for the first test
             
             # for distance from 0 (release_pose) to desired_approach distance (approach_pose) test IK/Collision and save result
@@ -304,7 +331,7 @@ class Execution(object):
                     #print interpolated_motion_plan_res
                 
                     # check and plan motion to this approach pose
-                    motion_plan_res = self.plan.plan_arm_motion( pickup_goal.arm_name, "jointspace", pre_grasp_pose_ )
+                    motion_plan_res = self.plan.plan_arm_motion( place_goal.arm_name, "jointspace" ,target_approach_pose_)#,object_to_attach)
         
                     #if this approach pose is successful do not test others
                     if (motion_plan_res.error_code.val == motion_plan_res.error_code.SUCCESS):
@@ -333,22 +360,22 @@ class Execution(object):
             
             # reach approach pose         
             if self.send_traj_( filtered_traj )<0:
-                QMessageBox.warning(self, "Warning",
-                    "Reach trajectory execution failed: ")
+                #QMessageBox.warning(self, "Warning",
+                #    "Reach trajectory execution failed: ")
                 placeresult.manipulation_result.value = ManipulationResult.FAILED
                 return placeresult
            
             # approach 
             if self.send_traj_( interpolated_motion_plan_res.trajectory.joint_trajectory )<0:
-                QMessageBox.warning(self, "Warning",
-                    "Approach trajectory execution failed: ")
+                #QMessageBox.warning(self, "Warning",
+                #    "Approach trajectory execution failed: ")
                 placeresult.manipulation_result.value = ManipulationResult.FAILED
                 return placeresult
             
             #put hand in pre-grasp posture
             if self.pre_grasp_exec(place_goal.grasp)<0:
-                QMessageBox.warning(self, "Warning",
-                    "Release action failed: ")
+                #QMessageBox.warning(self, "Warning",
+                #    "Release action failed: ")
                 placeresult.manipulation_result.value = ManipulationResult.FAILED
                 return placeresult
             #retreat
@@ -361,6 +388,17 @@ class Execution(object):
         placeresult.place_location= target_pose_to_execute_
         return placeresult
         
+    
+    def grasp_release_exec(self,timeout_sec=10.0):
+        hand_posture_goal_ = GraspHandPostureExecutionGoal()
+        hand_posture_goal_.grasp = Grasp()
+        hand_posture_goal_.grasp.pre_grasp_posture.name= [ "FFJ0", "FFJ3", "FFJ4", "LFJ0", "LFJ3", "LFJ4", "LFJ5", "MFJ0", "MFJ3", "MFJ4", "RFJ0", "RFJ3", "RFJ4", "THJ1", "THJ2", "THJ3", "THJ4", "THJ5", "WRJ1", "WRJ2"]
+        hand_posture_goal_.grasp.pre_grasp_posture.position = [0]*(18)
+        # do release action
+        hand_posture_goal_.goal = GraspHandPostureExecutionGoal.RELEASE
+        # call hand_posture_exec action lib
+        rospy.loginfo("Trying to release...")
+        return self.hand_posture_exec(hand_posture_goal_,timeout_sec)
         
     def pre_grasp_exec(self, grasp,timeout_sec=10.0):
       

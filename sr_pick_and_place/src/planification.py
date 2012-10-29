@@ -19,13 +19,14 @@
 import roslib; roslib.load_manifest("sr_pick_and_place")
 import rospy
 
-from arm_navigation_msgs.srv import GetMotionPlan, GetMotionPlanRequest, GetMotionPlanResponse, SetPlanningSceneDiff, FilterJointTrajectory, FilterJointTrajectoryRequest
-from arm_navigation_msgs.msg import MotionPlanRequest, Shape, PositionConstraint, OrientationConstraint, DisplayTrajectory, Constraints, JointConstraint, JointLimits, RobotState
+from arm_navigation_msgs.srv import GetMotionPlan, GetMotionPlanRequest, GetMotionPlanResponse, FilterJointTrajectory, FilterJointTrajectoryRequest
+from arm_navigation_msgs.srv import SetPlanningSceneDiff, SetPlanningSceneDiffRequest
+from arm_navigation_msgs.msg import MotionPlanRequest, Shape, PositionConstraint, OrientationConstraint, DisplayTrajectory, Constraints, JointConstraint, JointLimits, RobotState, AttachedCollisionObject, CollisionObjectOperation, Shape
 from interpolated_ik_motion_planner.srv import SetInterpolatedIKMotionPlanParams
 #import interpolated_ik_motion_planner.ik_utilities as ik_utilities
 from kinematics_msgs.srv import GetConstraintAwarePositionIK
 from kinematics_msgs.msg import PositionIKRequest
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Pose
 from trajectory_msgs.msg import JointTrajectory
 from sr_utilities.srv import getJointState
 
@@ -63,7 +64,7 @@ class Planification(object):
         #self.standard_ik_ = rospy.ServiceProxy("/shadow_right_arm_kinematics/get_ik", GetPositionIK)
 
 
-    def plan_arm_motion(self, arm_name, planner, palm_target_pose, hand_target_posture=[]):
+    def plan_arm_motion(self, arm_name, planner, palm_target_pose, attached_object=[], hand_target_posture=[]):
         """Plan motion for the palm, eventually virtually setting the hand in the pre-grasp posture to manage grasping in small spaces
         """
         goal = PoseStamped()
@@ -83,12 +84,15 @@ class Planification(object):
         if(planner=="cartesianspace"):
             result=self.plan_motion_cartesian_( arm_name, goal )
         else:
-            result=self.plan_motion_joint_state_( arm_name, goal )
+            result=self.plan_motion_joint_state_( arm_name, goal , attached_object )
         
         return result
 
-    def plan_motion_joint_state_(self, arm_name, goal_pose, link_name = "palm"):
+    def plan_motion_joint_state_(self, arm_name, goal_pose, attached_object_name=[], link_name = "palm"):
         self.reset_planning_scene_()
+        if(attached_object_name):
+            print "an object is attached"
+            self.set_planning_scene_(attached_object_name)
 
         motion_plan_res= GetMotionPlanResponse()
         
@@ -343,6 +347,37 @@ class Planification(object):
     def reset_planning_scene_(self):
         try:
             self.set_planning_scene_diff_.call()
+        except:
+            rospy.logerr("failed to reset the planning scene")
+            
+    def set_planning_scene_(self,attached_object_name):
+        att_object = AttachedCollisionObject()
+        att_object.link_name = "palm"
+        att_object.object.id = attached_object_name
+        att_object.object.operation.operation = CollisionObjectOperation.ATTACH_AND_REMOVE_AS_OBJECT
+        att_object.object.header.frame_id = "palm"
+        att_object.object.header.stamp = rospy.Time.now()
+        object = Shape()
+        object.type = Shape.CYLINDER
+        object.dimensions.append(.03)
+        object.dimensions.append(0.1)
+        pose = Pose()
+        pose.position.x = 0.0
+        pose.position.y = -0.06
+        pose.position.z = 0.06
+        pose.orientation.x = 0
+        pose.orientation.y = 0
+        pose.orientation.z = 0
+        pose.orientation.w = 1
+        att_object.object.shapes.append(object)
+        att_object.object.poses.append(pose);
+        att_object.touch_links= ["ffdistal","mfdistal","rfdistal","lfdistal","thdistal","ffmiddle","mfmiddle","rfmiddle","lfmiddle","thmiddle","ffproximal","mfproximal","rfproximal","lfproximal","thproximal","palm","lfmetacarpal","thbase"]
+        #att_object.touch_links.push_back("_end_effector");
+        
+        planning_scene_req = SetPlanningSceneDiffRequest()
+        planning_scene_req.planning_scene_diff.attached_collision_objects.append(att_object);
+        try:
+            planning_scene_res=self.set_planning_scene_diff_.call(planning_scene_req)
         except:
             rospy.logerr("failed to set the planning scene")
 
