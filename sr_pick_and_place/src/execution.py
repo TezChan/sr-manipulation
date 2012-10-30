@@ -48,6 +48,8 @@ class Execution(object):
     def __init__(self, ):
         """
         """
+        
+        self.simdelay = 3.0 #10.0
         #initialize the planner
         self.plan = Planification()
 
@@ -62,7 +64,8 @@ class Execution(object):
         rospy.wait_for_service("/objects_database_node/database_grasp_planning")
         rospy.loginfo("  OK services found")
                 
-        self.get_joint_state_ = rospy.ServiceProxy("/getJointState", getJointState)
+        self.get_joint_state_ = rospy.ServiceProxy("/getJointState", getJointState) 
+        # TODO use another getJointstateProvided by env Server
         self.trajectory_filter_ = rospy.ServiceProxy("/trajectory_filter_unnormalizer/filter_trajectory", FilterJointTrajectory)
         self.grasp_planning_service_ = rospy.ServiceProxy("/objects_database_node/database_grasp_planning", GraspPlanning)
         # access hand_posture execution actionlib
@@ -110,6 +113,8 @@ class Execution(object):
             grasp_pose_ = PoseStamped()
             grasp_pose_.header.frame_id = "/world";
             grasp_pose_.pose = grasp.grasp_pose
+            
+            grasp_pose_.pose.position.y=grasp_pose_.pose.position.y+0.03 #cheating here
            
             # copy the grasp_pose as a pre-grasp_pose
             pre_grasp_pose_ = copy.deepcopy(grasp_pose_)
@@ -176,7 +181,7 @@ class Execution(object):
                 pickresult.manipulation_result.value = ManipulationResult.FAILED
                 return pickresult
             #time.sleep(20) # TODO use actionlib here
-            time.sleep(10) # TODO use actionlib here
+            time.sleep(self.simdelay) # TODO use actionlib here
             
             # approach 
             if self.send_traj_( interpolated_motion_plan_res.trajectory.joint_trajectory )<0:
@@ -184,7 +189,7 @@ class Execution(object):
                 #    "Approach trajectory execution failed: ")
                 pickresult.manipulation_result.value = ManipulationResult.FAILED
                 return pickresult
-            time.sleep(10) # TODO use actionlib here
+            time.sleep(self.simdelay) # TODO use actionlib here
             
             #grasp
             if self.grasp_exec(grasp_to_execute_)<0:
@@ -192,7 +197,7 @@ class Execution(object):
                 #    "Grasp action failed: ")
                 pickresult.manipulation_result.value = ManipulationResult.FAILED
                 return pickresult
-            time.sleep(10) # TODO use actionlib here
+            time.sleep(self.simdelay) # TODO use actionlib here
             
             #attach the collision object to the hand (should be cleaned-up)
             rospy.loginfo("Now we attach the object")
@@ -280,7 +285,7 @@ class Execution(object):
             return 
         
         self.send_traj_( interpolated_motion_plan_res.trajectory.joint_trajectory )
-        time.sleep(10) # TODO use actionlib here
+        time.sleep(self.simdelay) # TODO use actionlib here
         return 
             
     def place(self,place_goal):
@@ -363,7 +368,7 @@ class Execution(object):
                 #    "Reach trajectory execution failed: ")
                 placeresult.manipulation_result.value = ManipulationResult.FAILED
                 return placeresult
-            time.sleep(10) # TODO use actionlib here
+            time.sleep(self.simdelay) # TODO use actionlib here
            
             # approach 
             if self.send_traj_( interpolated_motion_plan_res.trajectory.joint_trajectory )<0:
@@ -371,7 +376,7 @@ class Execution(object):
                 #    "Approach trajectory execution failed: ")
                 placeresult.manipulation_result.value = ManipulationResult.FAILED
                 return placeresult
-            time.sleep(10) # TODO use actionlib here
+            time.sleep(self.simdelay) # TODO use actionlib here
             
             #put hand in pre-grasp posture (to gently release)
             if self.pre_grasp_exec(place_goal.grasp)<0:
@@ -379,7 +384,7 @@ class Execution(object):
                 #    "Release action failed: ")
                 placeresult.manipulation_result.value = ManipulationResult.FAILED
                 return placeresult
-            time.sleep(10) # TODO use actionlib here
+            time.sleep(self.simdelay) # TODO use actionlib here
             #detach the object from the hand
             rospy.loginfo("Now we detach the attached object")    
             att_object = AttachedCollisionObject()
@@ -467,7 +472,7 @@ class Execution(object):
             return 
         
         self.send_traj_( interpolated_motion_plan_res.trajectory.joint_trajectory )
-        time.sleep(10) # TODO use actionlib here
+        time.sleep(self.simdelay) # TODO use actionlib here
         return 
             
     def grasp_release_exec(self,timeout_sec=10.0):

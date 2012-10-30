@@ -126,8 +126,8 @@ class ObjectChooser(QWidget):
             initial_pose = PoseStamped()
             initial_pose.header.stamp = rospy.get_rostime()
             initial_pose.header.frame_id = "/world"
-            initial_pose.pose.position.x = self.box_pose.pose.position.x+0.0
-            initial_pose.pose.position.y = self.box_pose.pose.position.y+0.1
+            initial_pose.pose.position.x = self.box_pose.pose.position.x+0.1
+            initial_pose.pose.position.y = self.box_pose.pose.position.y-0.3
             initial_pose.pose.position.z = self.box_pose.pose.position.z-box_dims.z/2 # graspable object is from bottom but bounding box is at center !
             q=transformations.quaternion_about_axis(-0.05, (0,0,1))
             initial_pose.pose.orientation.x = self.box_pose.pose.orientation.x #q[0]
@@ -136,7 +136,7 @@ class ObjectChooser(QWidget):
             initial_pose.pose.orientation.w = self.box_pose.pose.orientation.w#q[3]
 
             self.list_of_poses = self.compute_list_of_poses(initial_pose, graspable_object, executed_grasp)
-            print "list of pose",self.list_of_poses
+            #print "list of pose",self.list_of_poses
 
             self.place_object(graspable_object, self.object.graspable_object_name, self.object_name, self.list_of_poses)
             
@@ -194,7 +194,7 @@ class ObjectChooser(QWidget):
         initial_pose.pose.orientation.w = 0.824#self.box_pose.pose.orientation.w#q[3]
         
         list_of_poses = self.compute_list_of_poses(initial_pose, graspable_object, executed_grasp)
-        print "list of pose",list_of_poses
+        #print "list of pose",list_of_poses
 
         #self.place_object(self.object.graspable_object, self.object.graspable_object_name, self.object_name, self.list_of_poses)
 
@@ -211,6 +211,7 @@ class ObjectChooser(QWidget):
         pickup_goal.collision_object_name = graspable_object_name
         pickup_goal.collision_support_surface_name = self.gui.collision_support_surface_name
 
+        #pickup_goal.additional_link_padding
         pickup_goal.ignore_collisions = True
 
         pickup_goal.arm_name = "right_arm"
@@ -298,13 +299,13 @@ class ObjectChooser(QWidget):
         #which is along the z axis in the fixed frame
         direction = Vector3Stamped()
         direction.header.stamp = rospy.get_rostime()
-        direction.header.frame_id = "/base_link"
+        direction.header.frame_id = "/world"
         direction.vector.x = 0
         direction.vector.y = 0
         direction.vector.z = 1
         place_goal.approach.direction = direction
         place_goal.approach.min_distance = 0.01
-        place_goal.approach.desired_distance = 0.01
+        place_goal.approach.desired_distance = 0.03
         #request a vertical put down motion of 10cm before placing the object
         place_goal.desired_retreat_distance = 0.1
         place_goal.min_retreat_distance = 0.05
@@ -347,13 +348,13 @@ class ObjectChooser(QWidget):
         #  executed_grasp is hand pose in world frame
         #  graspable_object is object in world frame
         hand_world_pose = executed_grasp.grasp_pose 
-        print "hand_world", hand_world_pose
+        #print "hand_world", hand_world_pose
         object_world_pose = graspable_object.potential_models[0].pose.pose
-        print "object world" , object_world_pose
+        # print "object world" , object_world_pose
         tmathandworld = pose_to_mat(hand_world_pose)
         tmatobjworld = pose_to_mat(object_world_pose)
         hand_object_pose = mat_to_pose(np.dot(np.linalg.inv(tmatobjworld),tmathandworld))
-        print "hand_object_pose" , hand_object_pose
+        #print "hand_object_pose" , hand_object_pose
         
         # generate rotational_symmetric hand to object frames
         hand_object_poses = self.generate_rotational_symmetric_poses(hand_object_pose,16)
@@ -361,7 +362,7 @@ class ObjectChooser(QWidget):
         target_pose = PoseStamped()
         target_pose=copy.deepcopy(destination_pose) 
         target_pose.header.stamp = rospy.get_rostime()
-        print "target_object_world pose" , target_pose
+        #print "target_object_world pose" , target_pose
         tmattarget_world = pose_to_mat(target_pose.pose)
         
         for hand_object_pose in hand_object_poses:

@@ -19,9 +19,9 @@
 import roslib; roslib.load_manifest("sr_pick_and_place")
 import rospy
 
-from arm_navigation_msgs.srv import GetMotionPlan, GetMotionPlanRequest, GetMotionPlanResponse, FilterJointTrajectory, FilterJointTrajectoryRequest
+from arm_navigation_msgs.srv import GetMotionPlan, GetMotionPlanRequest, GetMotionPlanResponse, FilterJointTrajectoryWithConstraints, FilterJointTrajectoryWithConstraintsRequest
 from arm_navigation_msgs.srv import SetPlanningSceneDiff, SetPlanningSceneDiffRequest
-from arm_navigation_msgs.msg import MotionPlanRequest, Shape, PositionConstraint, OrientationConstraint, DisplayTrajectory, Constraints, JointConstraint, JointLimits, RobotState, AttachedCollisionObject, CollisionObjectOperation, Shape
+from arm_navigation_msgs.msg import MotionPlanRequest, PositionConstraint, OrientationConstraint, DisplayTrajectory, Constraints, JointConstraint, JointLimits, RobotState, AttachedCollisionObject, CollisionObjectOperation, Shape
 from interpolated_ik_motion_planner.srv import SetInterpolatedIKMotionPlanParams
 #import interpolated_ik_motion_planner.ik_utilities as ik_utilities
 from kinematics_msgs.srv import GetConstraintAwarePositionIK
@@ -50,7 +50,7 @@ class Planification(object):
         rospy.wait_for_service("/shadow_right_arm_kinematics/get_constraint_aware_ik")
         rospy.wait_for_service("/r_interpolated_ik_motion_plan_set_params")
         rospy.wait_for_service("/r_interpolated_ik_motion_plan")
-        rospy.wait_for_service("/trajectory_filter_unnormalizer/filter_trajectory")
+        rospy.wait_for_service("/trajectory_filter_server/filter_trajectory_with_constraints")
         rospy.wait_for_service("/getJointState")
         rospy.loginfo("  OK services found")
 
@@ -59,6 +59,9 @@ class Planification(object):
         self.constraint_aware_ik_ = rospy.ServiceProxy("/shadow_right_arm_kinematics/get_constraint_aware_ik", GetConstraintAwarePositionIK)
         self.interpolated_ik_params_srv = rospy.ServiceProxy('/r_interpolated_ik_motion_plan_set_params', SetInterpolatedIKMotionPlanParams)
         self.interpolated_ik_srv = rospy.ServiceProxy('/r_interpolated_ik_motion_plan', GetMotionPlan)
+        self.trajectory_filter_ = rospy.ServiceProxy("/trajectory_filter_server/filter_trajectory_with_constraints", FilterJointTrajectoryWithConstraints)
+        self.get_joint_state_ = rospy.ServiceProxy("/getJointState", getJointState) # TODO use another getJointstateProvided by env Server
+         
         #self.ik_utils = ik_utilities.IKUtilities('right',None,0) # do not wait for service this is not needed for us
 
         #self.standard_ik_ = rospy.ServiceProxy("/shadow_right_arm_kinematics/get_ik", GetPositionIK)
@@ -145,7 +148,7 @@ class Planification(object):
                 rospy.logerr("The planning failed: " + str(motion_plan_res.error_code.val))
             else:
                 # compute velocity and appropriate times
-                (times, vels) = self.trajectory_times_and_vels(motion_plan_res.trajectory, [.1]*6, [.2]*6)
+                (times, vels) = self.trajectory_times_and_vels(motion_plan_res.trajectory, [.05]*6, [.1]*6)
                 #print times
                 #print vels
                 for i in range(len(motion_plan_res.trajectory.joint_trajectory.points)):
@@ -155,7 +158,10 @@ class Planification(object):
         except rospy.ServiceException, e:
             rospy.logerr( "Failed to plan "+str(e) )
             motion_plan_res.error_code.val = motion_plan_res.error_code.PLANNING_FAILED
-            
+        
+        filtered_traj = self.filter_traj_(motion_plan_request, motion_plan_res)
+        motion_plan_res.trajectory.joint_trajectory = filtered_traj
+        
         return motion_plan_res
 
     def plan_motion_cartesian_(self, arm_name, goal_pose, link_name="palm"):
@@ -218,6 +224,35 @@ class Planification(object):
         except rospy.ServiceException, e:
             rospy.logerr( "Failed to plan "+str(e) )
             return False
+
+    def filter_traj_(self, motion_plan_req, motion_plan_res):
+        try:
+            req = FilterJointTrajectoryWithConstraintsRequest()
+            req.group_name="right_arm"
+            for name in ARM_NAMES:
+                limit = JointLimits()
+                limit.joint_name = name
+                limit.min_position = -1.5
+                limit.max_position = 1.5
+                limit.has_velocity_limits = True
+                limit.max_velocity = 0.05
+                limit.has_acceleration_limits = True
+                limit.max_acceleration = 0.1
+                req.limits.append(limit)
+
+            req.trajectory = motion_plan_res.trajectory.joint_trajectory
+            req.goal_constraints=motion_plan_req.goal_constraints
+            req.path_constraints=motion_plan_req.path_constraints
+            req.allowed_time = rospy.Duration.from_sec( 5.0 )
+            res = self.get_joint_state_.call()
+            req.start_state.joint_state = res.joint_state
+
+            res = self.trajectory_filter_.call( req )
+        except rospy.ServiceException, e:
+            rospy.logerr("Failed to filter "+str(e))
+            return motion_plan_res.trajectory
+
+        return res.trajectory
 
     def get_interpolated_ik_motion_plan(self, start_pose, target_pose, collision_check=False,
                                         steps_before_abort=1, num_steps=0,
