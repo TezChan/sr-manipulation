@@ -258,6 +258,7 @@ class ObjectChooser(QWidget):
         if self.pickup_result.manipulation_result.value == ManipulationResult.SUCCESS:
             loginfo("Pick succeeded, now lifting")
             self.pickupservice.lift(0.05)
+            
         else:
             loginfo("Pick failed")
             return 1
@@ -328,6 +329,15 @@ class ObjectChooser(QWidget):
             rospy.logerr("The place action has failed: " + str(place_result.manipulation_result.value) )
         print place_result
         '''
+        
+        if placeresult.manipulation_result.value == ManipulationResult.SUCCESS:
+            loginfo("Place succeeded, now retreating")
+            self.pickupservice.retreat(0.05)
+        else:
+            loginfo("Place failed")
+            return 1
+        return 0
+        
 
     def compute_list_of_poses(self, destination_pose, graspable_object, executed_grasp):
         
