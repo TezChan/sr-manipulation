@@ -49,7 +49,7 @@ class Execution(object):
         """
         """
         
-        self.simdelay = 3.0 #10.0
+        self.simdelay = 10.0 #3.0 #10.0 for simulation , 2 or less for real
         #initialize the planner
         self.plan = Planification()
 
@@ -114,7 +114,7 @@ class Execution(object):
             grasp_pose_.header.frame_id = "/world";
             grasp_pose_.pose = grasp.grasp_pose
             
-            grasp_pose_.pose.position.y=grasp_pose_.pose.position.y+0.03 #cheating here
+            grasp_pose_.pose.position.y=grasp_pose_.pose.position.y-0.01 #-0.01 in sim, +0.03 in real #cheating here
            
             # copy the grasp_pose as a pre-grasp_pose
             pre_grasp_pose_ = copy.deepcopy(grasp_pose_)

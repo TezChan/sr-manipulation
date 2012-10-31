@@ -258,7 +258,7 @@ class ObjectChooser(QWidget):
         
         if self.pickup_result.manipulation_result.value == ManipulationResult.SUCCESS:
             loginfo("Pick succeeded, now lifting")
-            self.pickupservice.lift(0.05)
+            self.pickupservice.lift(0.07)
             
         else:
             loginfo("Pick failed")
@@ -333,7 +333,7 @@ class ObjectChooser(QWidget):
         
         if placeresult.manipulation_result.value == ManipulationResult.SUCCESS:
             loginfo("Place succeeded, now retreating")
-            self.pickupservice.retreat(0.05)
+            self.pickupservice.retreat(0.07)
         else:
             loginfo("Place failed")
             return 1
