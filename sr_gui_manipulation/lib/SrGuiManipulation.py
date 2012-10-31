@@ -17,6 +17,10 @@ from __future__ import division
 import os
 import math
 
+import scipy
+import scipy.linalg
+import numpy as np
+
 import roslib; roslib.load_manifest('sr_gui_manipulation')
 import rospy
 from rospy import loginfo, logerr, logdebug
@@ -32,9 +36,10 @@ from QtGui import *
 from tabletop_object_detector.srv import TabletopDetection
 from tabletop_collision_map_processing.srv import TabletopCollisionMapProcessing
 from household_objects_database_msgs.srv import GetModelDescription
+from household_objects_database_msgs.msg import DatabaseModelPose
 import object_manipulator.draw_functions as draw_functions
 from object_manipulation_msgs.srv import FindClusterBoundingBox, FindClusterBoundingBoxRequest
-from object_manipulation_msgs.msg import Grasp, PickupGoal, PickupAction, PlaceGoal, PlaceAction
+from object_manipulation_msgs.msg import Grasp, PickupGoal, PickupAction, PickupResult, PlaceGoal, PlaceAction, ManipulationResult, GraspableObject
 from object_manipulator.convert_functions import *
 from geometry_msgs.msg import Vector3Stamped, PoseStamped, Pose
 import actionlib
@@ -43,6 +48,10 @@ import control_msgs.msg
 import trajectory_msgs.msg
 from tf import transformations
 import tf
+
+import copy
+
+from sr_pick_and_place.execution import Execution
 
 import yaml
 
@@ -59,8 +68,9 @@ class ObjectChooser(QWidget):
         self.title.setText(title)
         self.draw_functions = draw_functions.DrawFunctions('grasp_markers')
         self.pickup_result  = None
-        self.listener       = tf.TransformListener()       
+        self.listener       = tf.TransformListener()
         self.grasp_display_publisher = rospy.Publisher("/grasp_display", Grasp)
+        self.pickupservice = Execution()
 
     def draw(self):
         self.frame = QFrame(self)
@@ -98,12 +108,12 @@ class ObjectChooser(QWidget):
 
         box_mat = pose_to_mat(box_pose.pose)
         rospy.logerr("box_pose %f %f %f  q: %f %f %f %f",box_pose.pose.position.x,box_pose.pose.position.y,box_pose.pose.position.z,
-box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientation.z,box_pose.pose.orientation.w)
+        box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientation.z,box_pose.pose.orientation.w)
         box_ranges = [[-box_dims.x / 2, -box_dims.y / 2, -box_dims.z / 2],
                       [box_dims.x / 2, box_dims.y / 2, box_dims.z / 2]]
         self.box_pose=box_pose
 
-        self.draw_functions.draw_rviz_box(box_mat, box_ranges, '/fixed',
+        self.draw_functions.draw_rviz_box(box_mat, box_ranges, '/world',
                                           ns='bounding box',
                                           color=[0, 0, 1], opaque=0.25, duration=60)
 
@@ -112,38 +122,81 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
 
         if res == 0: #correctly picked up
         #TODO: set up place_location
+            executed_grasp = self.pickup_result.grasp
             initial_pose = PoseStamped()
             initial_pose.header.stamp = rospy.get_rostime()
-            initial_pose.header.frame_id = "/fixed"
-            initial_pose.pose.position.x = 0.0#self.box_pose.pose.position.x+0.0
-            initial_pose.pose.position.y = -0.1#self.box_pose.pose.position.y-0.2
-            initial_pose.pose.position.z = 0.05#self.box_pose.pose.position.z+0.05
+            initial_pose.header.frame_id = "/world"
+            initial_pose.pose.position.x = self.box_pose.pose.position.x+0.1
+            initial_pose.pose.position.y = self.box_pose.pose.position.y-0.3
+            initial_pose.pose.position.z = self.box_pose.pose.position.z-box_dims.z/2 # graspable object is from bottom but bounding box is at center !
             q=transformations.quaternion_about_axis(-0.05, (0,0,1))
-            initial_pose.pose.orientation.x = q[0]
-            initial_pose.pose.orientation.y = q[1]
-            initial_pose.pose.orientation.z = q[2]
-            initial_pose.pose.orientation.w = q[3]
+            initial_pose.pose.orientation.x = self.box_pose.pose.orientation.x #q[0]
+            initial_pose.pose.orientation.y = self.box_pose.pose.orientation.y#q[1]
+            initial_pose.pose.orientation.z = self.box_pose.pose.orientation.z#q[2]
+            initial_pose.pose.orientation.w = self.box_pose.pose.orientation.w#q[3]
 
-            self.list_of_poses = self.compute_list_of_poses(initial_pose, graspable_object)
+            self.list_of_poses = self.compute_list_of_poses(initial_pose, graspable_object, executed_grasp)
+            #print "list of pose",self.list_of_poses
 
             self.place_object(graspable_object, self.object.graspable_object_name, self.object_name, self.list_of_poses)
 
+
     def place_click(self):
+
+        if (self.pickup_result):
+            grasp = self.pickup_result.grasp
+            self.pickupservice.pre_grasp_exec(grasp,10.0)
+        else:
+            self.pickupservice.grasp_release_exec(10.0)
+
         initial_pose = PoseStamped()
         initial_pose.header.stamp = rospy.get_rostime()
-        initial_pose.header.frame_id = self.object.graspable_object.reference_frame_id#"/fixed"
-        initial_pose.pose.position.x = 0.2#self.box_pose.pose.position.x+0.0
-        initial_pose.pose.position.y = -0.1#self.box_pose.pose.position.y-0.2
-        initial_pose.pose.position.z = 0.05#self.box_pose.pose.position.z+0.05
+        initial_pose.header.frame_id = "/world"#"/fixed"
+
+        #fake hand to world pose
+        initial_pose.pose.position.x = 0.4#self.box_pose.pose.position.x+0.0
+        initial_pose.pose.position.y = 0.091# self.box_pose.pose.position.y-0.2
+        initial_pose.pose.position.z = 1.25#self.box_pose.pose.position.z+0.05
         q=transformations.quaternion_about_axis(-0.05, (0,0,1))
-        initial_pose.pose.orientation.x = 0#q[0]
-        initial_pose.pose.orientation.y = 0#q[1]
-        initial_pose.pose.orientation.z = 0#q[2]
-        initial_pose.pose.orientation.w = 1#q[3]
+        initial_pose.pose.orientation.x = 0.41#self.box_pose.pose.orientation.x#q[0]
+        initial_pose.pose.orientation.y = 0.695#self.box_pose.pose.orientation.y#q[1]
+        initial_pose.pose.orientation.z = 0.52#self.box_pose.pose.orientation.z#q[2]
+        initial_pose.pose.orientation.w = 0.284#self.box_pose.pose.orientation.w#q[3]
 
-        self.list_of_poses = self.compute_list_of_poses(initial_pose, self.object.graspable_object)
+        executed_grasp=Grasp()
+        executed_grasp.grasp_pose=copy.deepcopy(initial_pose.pose)
 
-        self.place_object(self.object.graspable_object, self.object.graspable_object_name, self.object_name, self.list_of_poses)
+        #fake obj world origin pose
+        initial_pose.pose.position.x = 0.43
+        initial_pose.pose.position.y = 0.149
+        initial_pose.pose.position.z = 1.088
+        initial_pose.pose.orientation.x = 0.0#self.box_pose.pose.orientation.x#q[0]
+        initial_pose.pose.orientation.y = 0.0#self.box_pose.pose.orientation.y#q[1]
+        initial_pose.pose.orientation.z = 0.567#self.box_pose.pose.orientation.z#q[2]
+        initial_pose.pose.orientation.w = 0.824#self.box_pose.pose.orientation.w#q[3]
+
+        #fake graspable object
+        graspable_object = GraspableObject()
+        graspable_object.reference_frame_id = "/world"
+        mypotentialmodels = DatabaseModelPose()
+        mypotentialmodels.model_id = 18744
+        mypotentialmodels.confidence = 1.0
+        mypotentialmodels.pose = copy.deepcopy(initial_pose)
+        graspable_object.potential_models.append(mypotentialmodels)
+
+        #fake obj world destination pose
+        initial_pose.pose.position.x = 0.43
+        initial_pose.pose.position.y = 0.0
+        initial_pose.pose.position.z = 1.088
+        initial_pose.pose.orientation.x = 0.0#self.box_pose.pose.orientation.x#q[0]
+        initial_pose.pose.orientation.y = 0.0#self.box_pose.pose.orientation.y#q[1]
+        initial_pose.pose.orientation.z = 0.567#self.box_pose.pose.orientation.z#q[2]
+        initial_pose.pose.orientation.w = 0.824#self.box_pose.pose.orientation.w#q[3]
+
+        list_of_poses = self.compute_list_of_poses(initial_pose, graspable_object, executed_grasp)
+        #print "list of pose",list_of_poses
+
+        #self.place_object(self.object.graspable_object, self.object.graspable_object_name, self.object_name, self.list_of_poses)
 
     def pickup(self, graspable_object, graspable_object_name, object_name):
         """
@@ -158,11 +211,12 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         pickup_goal.collision_object_name = graspable_object_name
         pickup_goal.collision_support_surface_name = self.gui.collision_support_surface_name
 
+        #pickup_goal.additional_link_padding
         pickup_goal.ignore_collisions = True
 
         pickup_goal.arm_name = "right_arm"
-        #pickup_goal.desired_approach_distance = 0.05
-        #pickup_goal.min_approach_distance = 0.02
+        #pickup_goal.desired_approach_distance = 0.08 This does not exist anymore in the message
+        #pickup_goal.min_approach_distance = 0.02 This does not exist anymore in the message
 
         direction = Vector3Stamped()
         direction.header.stamp = rospy.get_rostime()
@@ -178,17 +232,20 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         pickup_goal.use_reactive_lift = True;
         pickup_goal.use_reactive_execution = True;
 
-        pickup_client = actionlib.SimpleActionClient('/object_manipulator/object_manipulator_pickup', PickupAction)
-        pickup_client.wait_for_server()
-        rospy.loginfo("Pickup server ready")
+        self.pickup_result = self.pickupservice.pick(pickup_goal)
 
-        pickup_client.send_goal(pickup_goal)
+        #pickup_client = actionlib.SimpleActionClient('/object_manipulator/object_manipulator_pickup', PickupAction)
+        #pickup_client.wait_for_server()
+        #rospy.loginfo("Pickup server ready")
+
+        #pickup_client.send_goal(pickup_goal)
         #TODO: change this when using the robot
-        pickup_client.wait_for_result(timeout=rospy.Duration.from_sec(3600.0))
+        #pickup_client.wait_for_result(timeout=rospy.Duration.from_sec(3600.0))
         loginfo("Got Pickup results")
-        self.pickup_result = pickup_client.get_result()
+        #self.pickup_result = pickup_client.get_result()
 
         #print "Pickup result: "+str(self.pickup_result)
+        '''
         if pickup_client.get_state() != GoalStatus.SUCCEEDED:
             rospy.logerr("The pickup action has failed: " + str(self.pickup_result.manipulation_result.value) )
             QMessageBox.warning(self, "Warning",
@@ -197,6 +254,15 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
                 if tested_grasp_result.result_code==7:
                   self.grasp_display_publisher.publish(tested_grasp)
             return -1
+        '''
+
+        if self.pickup_result.manipulation_result.value == ManipulationResult.SUCCESS:
+            loginfo("Pick succeeded, now lifting")
+            self.pickupservice.lift(0.07)
+
+        else:
+            loginfo("Pick failed")
+            return 1
         return 0
 
     def place_object(self, graspable_object, graspable_object_name, object_name, list_of_poses ):
@@ -233,20 +299,22 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         #which is along the z axis in the fixed frame
         direction = Vector3Stamped()
         direction.header.stamp = rospy.get_rostime()
-        direction.header.frame_id = "/base_link"
+        direction.header.frame_id = "/world"
         direction.vector.x = 0
         direction.vector.y = 0
         direction.vector.z = 1
         place_goal.approach.direction = direction
-        place_goal.approach.min_distance = 0.02
-        place_goal.approach.desired_distance = 0.1
+        place_goal.approach.min_distance = 0.01
+        place_goal.approach.desired_distance = 0.03
         #request a vertical put down motion of 10cm before placing the object
         place_goal.desired_retreat_distance = 0.1
         place_goal.min_retreat_distance = 0.05
         #we are not using tactile based placing
         place_goal.use_reactive_place = False
 
-        place_client = actionlib.SimpleActionClient('/object_manipulator/object_manipulator_place', PlaceAction)
+
+        placeresult = self.pickupservice.place(place_goal)
+        '''place_client = actionlib.SimpleActionClient('/object_manipulator/object_manipulator_place', PlaceAction)
         place_client.wait_for_server()
         rospy.loginfo("Place server ready")
 
@@ -261,38 +329,83 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
         if place_client.get_state() != GoalStatus.SUCCEEDED:
             rospy.logerr("The place action has failed: " + str(place_result.manipulation_result.value) )
         print place_result
+        '''
 
-    def compute_list_of_poses(self, initial_pose, graspable_object, rect_w=0.10, rect_h=0.10, resolution=0.02):
-        '''
-        Computes a list of possible poses in a rectangle of 2*rect_w by 2*rect_h, with the given resolution.
-        In our case, rect_w is along the x axis, and rect_h along the y_axis.
-        '''
+        if placeresult.manipulation_result.value == ManipulationResult.SUCCESS:
+            loginfo("Place succeeded, now retreating")
+            self.pickupservice.retreat(0.07)
+        else:
+            loginfo("Place failed")
+            return 1
+        return 0
+
+
+    def compute_list_of_poses(self, destination_pose, graspable_object, executed_grasp):
+
         list_of_poses = []
 
-        current_pose = PoseStamped()
-        current_pose.header.stamp = rospy.get_rostime()
-        current_pose.header.frame_id = initial_pose.header.frame_id #"/fixed"
-        current_pose.pose.position.x = initial_pose.pose.position.x
-        current_pose.pose.position.y = initial_pose.pose.position.y
-        current_pose.pose.position.z = initial_pose.pose.position.z
-        current_pose.pose.orientation.x = initial_pose.pose.orientation.x
-        current_pose.pose.orientation.y = initial_pose.pose.orientation.y
-        current_pose.pose.orientation.z = initial_pose.pose.orientation.z
-        current_pose.pose.orientation.w = initial_pose.pose.orientation.w
-        rospy.loginfo( " placing object at: "+str(current_pose)  )
+        # find hand to object transform
+        #  executed_grasp is hand pose in world frame
+        #  graspable_object is object in world frame
+        hand_world_pose = executed_grasp.grasp_pose
+        #print "hand_world", hand_world_pose
+        object_world_pose = graspable_object.potential_models[0].pose.pose
+        # print "object world" , object_world_pose
+        tmathandworld = pose_to_mat(hand_world_pose)
+        tmatobjworld = pose_to_mat(object_world_pose)
+        hand_object_pose = mat_to_pose(np.dot(np.linalg.inv(tmatobjworld),tmathandworld))
+        #print "hand_object_pose" , hand_object_pose
 
-        list_of_poses.append(current_pose)
+        # generate rotational_symmetric hand to object frames
+        hand_object_poses = self.generate_rotational_symmetric_poses(hand_object_pose,16)
+
+        target_pose = PoseStamped()
+        target_pose=copy.deepcopy(destination_pose)
+        target_pose.header.stamp = rospy.get_rostime()
+        #print "target_object_world pose" , target_pose
+        tmattarget_world = pose_to_mat(target_pose.pose)
+
+        for hand_object_pose in hand_object_poses:
+            tmathandobj = pose_to_mat(hand_object_pose)
+            target_hand_posestamped_world = PoseStamped()
+            target_hand_posestamped_world.header.frame_id = "/world"
+            target_hand_posestamped_world.pose= mat_to_pose(np.dot(tmattarget_world,tmathandobj))
+            target_hand_posestamped_world.header.stamp = rospy.get_rostime()
+            list_of_poses.append(target_hand_posestamped_world)
 
         self.draw_place_area(list_of_poses, graspable_object)
 
         return list_of_poses
+
+    def generate_rotational_symmetric_poses(self, hand_object_pose,step=8):
+        '''
+        Generate a list of 20 pregrasps around the z axis of the object
+        '''
+        generated_poses = []
+        pose=hand_object_pose
+        #We'll generate 20 poses centered in 0,0,0 with orientations in 360 degrees around z
+
+        for i in range(0,step):
+            angle = (6.28318532 * i)/step
+            q = tf.transformations.quaternion_from_euler(0.0,0.0,angle)
+            rotation_pose = Pose(Point(0,0,0), Quaternion(0.0,0.0,0.0,1.0))
+            rotation_pose.orientation = Quaternion(*q)
+
+            tmatrotz = pose_to_mat(rotation_pose)
+            # premultiply by the rotation matrix
+            tmatpose = pose_to_mat(pose)
+            rotated_pose = mat_to_pose(np.dot(tmatrotz,tmatpose))
+
+            generated_poses.append(rotated_pose)
+
+        return generated_poses
 
     def draw_place_area(self, list_of_poses, graspable_object):
         '''
         Displays all the possible placing locations that are going to be tried.
         '''
         #try:
-        (trans_palm,rot_palm) = self.listener.lookupTransform('/fixed', '/palm', rospy.Time(0))
+        (trans_palm,rot_palm) = self.listener.lookupTransform('/world', '/palm', rospy.Time(0))
         #except:
         #    return
 
@@ -308,7 +421,7 @@ box_pose.pose.orientation.x,box_pose.pose.orientation.y,box_pose.pose.orientatio
             pose_tmp.orientation.w = pose_stamped.pose.orientation.w
 
             mat = pose_to_mat(pose_tmp)
-            self.draw_functions.draw_rviz_box(mat, [.01,.01,.01], frame='/object_frame', ns='place_'+str(index),
+            self.draw_functions.draw_rviz_box(mat, [.01,.01,.01], frame='/world', ns='place_'+str(index),
                                               id=1000+index, duration = 90, color=[0.5,0.5,0.0], opaque=1.0 )
 
     def call_find_cluster_bounding_box(self, cluster):
@@ -413,8 +526,8 @@ class SrGuiManipulation(QObject):
         self.win.btn_collision_map.pressed.connect(self.process_collision_map)
         self.win.btn_collision_map.setEnabled(False)
         self.win.btn_start_grab_position.pressed.connect(self.start_grab_position)
-        self.win.btn_zero_position.pressed.connect(self.zero_position)
-#        self.win.btn_zero_position.pressed.connect(self.redo_place)
+#        self.win.btn_zero_position.pressed.connect(self.zero_position)
+        self.win.btn_zero_position.pressed.connect(self.redo_place)
         self.robot_lib_eth = EtherCAT_Hand_Lib()
 
 # Guillaume: Currently removed because requires ethercat to be active to run, ethercat does exist in sim
@@ -486,7 +599,7 @@ class SrGuiManipulation(QObject):
         except rospy.ServiceException, e:
             print "Service did not process request: %s" % str(e)
 
-        print self.raw_objects
+        #print self.raw_objects
         # Take a new collision map + add the detected objects to the collision
         # map and get graspable objects from them
         tabletop_collision_map_res = self.process_collision_map()
@@ -516,7 +629,7 @@ class SrGuiManipulation(QObject):
         res = 0
         try:
             #Args: detection_result reset_collision_models reset_attached_models desired_frame
-            res = self.service_tabletop_collision_map.call(self.raw_objects.detection, True, True, "/fixed")
+            res = self.service_tabletop_collision_map.call(self.raw_objects.detection, True, True, "/world")
         except rospy.ServiceException, e:
             logerr("Service did not process request: %s" % str(e))
 
@@ -652,6 +765,7 @@ class SrGuiManipulation(QObject):
 
     def start_grab_position(self):
         """Move the arm into a good starting position for the grab"""
-        self.position_arm('start_grab')
+        #self.position_arm('start_grab')
+
 
 

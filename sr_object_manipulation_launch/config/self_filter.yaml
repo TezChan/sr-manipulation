@@ -42,7 +42,7 @@ self_see_links:
     padding: .04
   - name: shadowarm_base
     padding: .04
-  - name: shadow_handsupport
+  - name: shadowarm_handsupport
     padding: .04
   - name: shadowarm_lowerarm
     padding: .04

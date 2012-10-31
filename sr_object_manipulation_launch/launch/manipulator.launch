@@ -15,7 +15,7 @@
 
   <node name="sr_grasp_planner" pkg="sr_grasp_planner" type="sr_grasp_planner" respawn="false"/>
 
-  <node name="object_manipulator" pkg="object_manipulator" type="object_manipulator_node"
+<!-- <node name="object_manipulator" pkg="object_manipulator" type="object_manipulator_node"
 	respawn="false"
 	output="screen">
     <remap from="right_arm/constraint_aware_ik" to="/shadow_right_arm_kinematics/get_constraint_aware_ik" />
@@ -23,9 +23,9 @@
     <remap from="right_arm/interpolated_ik_set_params" to="/r_interpolated_ik_motion_plan_set_params"/>
     <remap from="right_arm/get_fk" to="/shadow_right_arm_kinematics/get_fk" />
     <remap from="right_arm/get_ik_solver_info" to="/shadow_right_arm_kinematics/get_ik_solver_info"/>
-
+-->
     <!--<remap from="right_arm_joint_controller" to="/shadow_right_arm_kinematics/get_ik_solver_info"/> -->
-    <param name="right_arm_joint_controller" value="r_arm_joint_trajectory_controller" />
+<!--    <param name="right_arm_joint_controller" value="r_arm_joint_trajectory_controller" />
 
     <param name="right_arm_cartesian_controller" value="r_arm_cartesian_pose_controller" />
 
@@ -44,5 +44,5 @@
     <remap from="/list_controllers" to="/sr_controller_manager/list_controllers"/>
     <remap from="/switch_controller" to="/sr_controller_manager/switch_controller"/>
   </node>
-
+-->
 </launch>
