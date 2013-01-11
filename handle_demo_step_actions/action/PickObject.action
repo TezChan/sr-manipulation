@@ -1,0 +1,13 @@
+# Define the goal
+handle_demo_step_actions/TableObject object_to_pick
+string collision_support_surface_name
+---
+# Define the result
+uint32 result
+geometry_msgs/PoseStamped initial_pose
+object_manipulation_msgs/Grasp executed_grasp
+---
+# Define a feedback message
+uint32 percent_complete
+
+string feedback_information_message

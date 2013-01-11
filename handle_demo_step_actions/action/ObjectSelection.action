@@ -1,0 +1,10 @@
+# Define the goal
+handle_demo_step_actions/TableObject[] objects
+---
+# Define the result
+handle_demo_step_actions/TableObject selected_object
+---
+# Define a feedback message
+uint32 percent_complete
+
+string feedback_information_message

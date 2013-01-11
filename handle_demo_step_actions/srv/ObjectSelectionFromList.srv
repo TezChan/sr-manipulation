@@ -1,0 +1,6 @@
+handle_demo_step_actions/TableObject[] objects
+
+---
+
+# the selected object index
+uint32 selected_object_index
