@@ -9,9 +9,8 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/sr_gui_manipulation</url>
   <depend package="rospy"/>
-  <depend package="rosgui"/>
-  <depend package="rosgui_rospy"/>
-  <depend package="rosgui_roscpp" />
+  <depend package="rqt_gui"/>
+  <depend package="rqt_gui_py"/>
   <depend package="rostopic"/>
   <depend package="std_msgs"/>
   <depend package="std_srvs"/>
@@ -24,7 +23,7 @@
   <depend package="sr_pick_and_place"/>
 
   <export>
-    <rosgui plugin="${prefix}/sr_gui_manipulation.xml"/>
+    <rqt_gui plugin="${prefix}/sr_gui_manipulation.xml"/>
   </export>
 
 </package>

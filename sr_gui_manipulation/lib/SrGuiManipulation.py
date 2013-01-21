@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import division
 import os
 import math
 
@@ -28,7 +27,8 @@ from std_msgs.msg import Float64
 from etherCAT_hand_lib import EtherCAT_Hand_Lib
 from shadowhand_ros import ShadowHand_ROS
 
-from rosgui.QtBindingHelper import loadUi
+from qt_gui.plugin import Plugin
+from qt_gui.qt_binding_helper import loadUi
 import QtGui
 from QtCore import QEvent, QObject, Qt, QTimer, Slot, QThread, SIGNAL, QPoint, SIGNAL
 from QtGui import *
@@ -484,10 +484,10 @@ class Model(object):
         self.name = None
 
 
-class SrGuiManipulation(QObject):
+class SrGuiManipulation(Plugin):
     """The main GUI dock window"""
-    def __init__(self, parent, plugin_context):
-        super(SrGuiManipulation, self).__init__(parent)
+    def __init__(self, context):
+        super(SrGuiManipulation, self).__init__(context)
 
         self.setObjectName('SrGuiManipulation')
         # Set by call to process_collision_map()
@@ -501,33 +501,26 @@ class SrGuiManipulation(QObject):
 
         self_dir        = os.path.dirname(os.path.realpath(__file__));
         self.config_dir = os.path.join(self_dir, '../config')
-        self.ui_dir     = os.path.join(self_dir, '../ui')
+        self.ui_dir     = os.path.join(self_dir, '../../ui')
 
         # UI setup
+        self._widget = QWidget()
         ui_file = os.path.join(self.ui_dir, 'SrGuiManipulation.ui')
+        loadUi(ui_file, self._widget)
+        self._widget.setObjectName('SrGuiManipulationUi')
+        context.add_widget(self._widget)
 
-        main_window = plugin_context.main_window()
-        self.win = QDockWidget(main_window)
-        loadUi(ui_file, self.win)
-        if plugin_context.serial_number() > 1:
-            self.win.setWindowTitle(
-                    self.win.windowTitle() + (' (%d)' % plugin_context.serial_number()) )
-        main_window.addDockWidget(Qt.RightDockWidgetArea, self.win)
-
-        # trigger deleteLater for plugin when win is closed
-        self.win.installEventFilter(self)
-
-        self.object_chooser = ObjectChooser(self.win, self, "Objects Detected")
-        self.win.contents.layout().addWidget(self.object_chooser)
+        self.object_chooser = ObjectChooser(self._widget, self, "Objects Detected")
+        self._widget.chooser_layout.addWidget(self.object_chooser)
         self.object_chooser.draw()
 
         # Bind button clicks
-        self.win.btn_detect_objects.pressed.connect(self.detect_objects)
-        self.win.btn_collision_map.pressed.connect(self.process_collision_map)
-        self.win.btn_collision_map.setEnabled(False)
-        self.win.btn_start_grab_position.pressed.connect(self.start_grab_position)
-#        self.win.btn_zero_position.pressed.connect(self.zero_position)
-        self.win.btn_zero_position.pressed.connect(self.redo_place)
+        self._widget.btn_detect_objects.pressed.connect(self.detect_objects)
+        self._widget.btn_collision_map.pressed.connect(self.process_collision_map)
+        self._widget.btn_collision_map.setEnabled(False)
+        self._widget.btn_start_grab_position.pressed.connect(self.start_grab_position)
+#        self._widget.btn_zero_position.pressed.connect(self.zero_position)
+        self._widget.btn_zero_position.pressed.connect(self.redo_place)
         self.robot_lib_eth = EtherCAT_Hand_Lib()
 
 # Guillaume: Currently removed because requires ethercat to be active to run, ethercat does exist in sim
@@ -574,26 +567,27 @@ class SrGuiManipulation(QObject):
             self.joint_pub[j] = rospy.Publisher(topic, Float64)
 
     def eventFilter(self, obj, event):
-        if obj is self.win and event.type() == QEvent.Close:
+        if obj is self._widget and event.type() == QEvent.Close:
             # TODO: ignore() should not be necessary when returning True
             event.ignore()
             self.deleteLater()
             return True
         return QObject.eventFilter(self, obj, event)
 
-    def close_plugin(self):
-        self.win.close()
-        self.win.deleteLater()
+    def shutdown_plugin(self):
+        for pub in self.joint_pub:
+            self.joint_pub[pub].unregister()
+
 
     def save_settings(self, global_settings, perspective_settings):
-        loginfo(self.objectName()+" saving settings")
+        pass
 
     def restore_settings(self, global_settings, perspective_settings):
-        loginfo(self.objectName()+" restoring settings")
+        pass
 
     def detect_objects(self):
         self.found_objects.clear()
-        self.win.contents.setCursor(Qt.WaitCursor)
+        self._widget.setCursor(Qt.WaitCursor)
         try:
             self.raw_objects = self.service_object_detector(True, True, 1)
         except rospy.ServiceException, e:
@@ -620,10 +614,10 @@ class SrGuiManipulation(QObject):
                self.found_objects[obj_tmp.model_description.name] = obj_tmp
 
         if self.raw_objects != None:
-           self.win.btn_collision_map.setEnabled(True)
+           self._widget.btn_collision_map.setEnabled(True)
         # TODO: Should really do this with SIGNALs and SLOTs.
         self.object_chooser.refresh_list()
-        self.win.contents.setCursor(Qt.ArrowCursor)
+        self._widget.setCursor(Qt.ArrowCursor)
 
     def process_collision_map(self):
         res = 0
@@ -637,7 +631,7 @@ class SrGuiManipulation(QObject):
             name = res.collision_support_surface_name
             loginfo("collision_support_surface_name: "+name)
             self.collision_support_surface_name = name
-            self.win.collision_support_surface_name.setText(name)
+            self._widget.collision_support_surface_name.setText(name)
         return res
 
     def get_object_name(self, model_id):
@@ -666,18 +660,18 @@ class SrGuiManipulation(QObject):
         try:
             data = yaml.load(open(yaml_file))
         except IOError as err:
-            QMessageBox.warning(self.win, "Warning",
+            QMessageBox.warning(self._widget, "Warning",
                     "Failed to load '"+yaml_file+"': "+str(err))
             return
 
-        self.win.contents.setCursor(Qt.WaitCursor)
+        self._widget.setCursor(Qt.WaitCursor)
         try:
             self._position_arm_actionlib(data[pos_name])
             #self._position_arm_direct(data[pos_name])
         except:
-            self.win.contents.setCursor(Qt.ArrowCursor)
+            self._widget.setCursor(Qt.ArrowCursor)
             raise
-        self.win.contents.setCursor(Qt.ArrowCursor)
+        self._widget.setCursor(Qt.ArrowCursor)
 
     def _position_arm_actionlib(self, moves):
         # Use action server r_arm_controller/joint_trajectory_action
