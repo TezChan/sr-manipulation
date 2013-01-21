@@ -45,9 +45,10 @@ class Execution(object):
     """
     """
 
-    def __init__(self, ):
+    def __init__(self, use_database = True):
         """
         """
+        self.use_database = use_database
 
         self.simdelay = 10.0 #3.0 #10.0 for simulation , 2 or less for real
         #initialize the planner
@@ -61,13 +62,17 @@ class Execution(object):
         rospy.loginfo("Waiting for services  /getJointState, /trajectory_filter_unnormalizer/filter_trajectory, /database_grasp_planning")
         rospy.wait_for_service("/getJointState")
         rospy.wait_for_service("/trajectory_filter_unnormalizer/filter_trajectory")
-        rospy.wait_for_service("/objects_database_node/database_grasp_planning")
+
+        if self.use_database:
+            rospy.wait_for_service("/objects_database_node/database_grasp_planning")
         rospy.loginfo("  OK services found")
 
         self.get_joint_state_ = rospy.ServiceProxy("/getJointState", getJointState)
         # TODO use another getJointstateProvided by env Server
         self.trajectory_filter_ = rospy.ServiceProxy("/trajectory_filter_unnormalizer/filter_trajectory", FilterJointTrajectory)
-        self.grasp_planning_service_ = rospy.ServiceProxy("/objects_database_node/database_grasp_planning", GraspPlanning)
+
+        if self.use_database:
+            self.grasp_planning_service_ = rospy.ServiceProxy("/objects_database_node/database_grasp_planning", GraspPlanning)
         # access hand_posture execution actionlib
         self.hand_posture_execution_actionclient_ = actionlib.SimpleActionClient('/right_arm/hand_posture_execution', GraspHandPostureExecutionAction)
         self.hand_posture_execution_actionclient_.wait_for_server()
@@ -580,6 +585,22 @@ class Execution(object):
         else:
             rospy.loginfo("The joint_trajectory action has succeeded")
             return 0
+
+    def plan_and_execute_step_(self, all_steps):
+        step = all_steps.pop(0)
+        motion_plan_res = self.plan.plan_arm_motion( "right_arm", "jointspace", step )
+        if (motion_plan_res.error_code.val == motion_plan_res.error_code.SUCCESS):
+            rospy.logdebug("OK, motion planned, executing it.")
+            # filter the trajectory
+            filtered_traj = self.filter_traj_(motion_plan_res)
+            #go there
+            self.display_traj_( filtered_traj )
+            self.send_traj_( filtered_traj )
+
+        else:
+            rospy.logerr("This step was impossible")
+
+
 
 if __name__ =="__main__":
     rospy.init_node("execution")

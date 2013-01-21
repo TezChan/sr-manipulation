@@ -1,5 +1,0 @@
-geometry_msgs/PoseStamped initial_pose_of_the_object
-
----
-
-geometry_msgs/PoseStamped selected_place_pose

@@ -1,9 +1,0 @@
-# Define the goal
-string[] steps_to_execute
-string first_step
----
-# Define the result
-uint32 result
----
-# Define a feedback message
-string current_step
