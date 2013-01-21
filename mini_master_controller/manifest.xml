@@ -1,0 +1,17 @@
+<package>
+  <description brief="mini_master_controller">
+
+     mini_master_controller contains an implementation of a Master Controller to reproduce the behaviour of the sr_gui_manipulation package. The Master Controller contains an actionlib server that is triggered by another node (normally a GUI) and starts the execution of the steps by sending goals to every individual step's actionlib server.
+
+  </description>
+  <author>Toni Oliver</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/mini_master_controller</url>
+  <depend package="rospy"/>
+  <depend package="actionlib"/>
+  <depend package="handle_demo_step_actions"/>
+
+</package>
+
+

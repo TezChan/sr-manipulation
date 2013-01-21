@@ -1,0 +1,27 @@
+<package>
+  <description brief="handle_demo_step_action_severs">
+
+     handle_demo_step_action_servers contains a class for every step in the demo. Every one of this classes contains an actionlib that performs tha job for that step. The Master Controller (MC) will send a goal to the actionlib to trigger that particular step. When the action finishes, the MC will receive the result from that step, and triger the next step.
+
+  </description>
+  <author>Toni Oliver</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/handle_demo_step_action_servers</url>
+  <depend package="rospy"/>
+  <depend package="roslib"/>
+  <depend package="actionlib"/>
+  <depend package="rostopic"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="tabletop_collision_map_processing"/>
+  <depend package="object_manipulator"/>
+  <depend package="sr_robot_lib"/>
+  <depend package="sr_hand"/>
+  <depend package="control_msgs"/>
+  <depend package="sr_pick_and_place"/>
+  <depend package="handle_demo_step_actions"/>
+
+</package>
+
+

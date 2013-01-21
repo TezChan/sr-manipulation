@@ -1,0 +1,15 @@
+<library path="src">
+  <class name="SrGuiEventSequence" type="sr_gui_event_sequence.event_sequence.SrGuiEventSequence" base_class_type="rqt_gui_py::Plugin">
+    <description>
+	A Shadow Robot plugin that loads a custom list of actions and runs them in a sequence
+    </description>
+    <qtgui>
+      <group>
+	<label>Shadow Robot</label>
+      </group>
+      <label>Shadow Event Sequence</label>
+      <icon type="theme">input-gaming</icon>
+      <statustip>A Shadow Robot plugin that loads a custom list of actions and runs them in a sequence.</statustip>
+    </qtgui>
+  </class>
+</library>

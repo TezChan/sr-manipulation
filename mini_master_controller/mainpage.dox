@@ -1,0 +1,14 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b mini_master_controller contains an implementation of a Master Controller to reproduce the behaviour of the sr_gui_manipulation package. The Master Controller contains an actionlib server that is triggered by another node (normally a GUI) and starts the execution of the steps by sending goals to every individual step's actionlib server.
+
+<!-- 
+Provide an overview of your package.
+-->
+
+-->
+
+
+*/

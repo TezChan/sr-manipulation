@@ -1,0 +1,32 @@
+steps:
+
+- name: object_recognition
+  label: Object Recognition
+  package: handle_demo_steps
+  module: object_recognition_control
+  class: ObjectRecognitionControl
+
+- name: object_selection
+  label: Object Selection
+  package: handle_demo_steps
+  module: object_selection_control
+  class: ObjectSelectionControl
+
+- name: pick_object
+  label: Pick Object
+  package: handle_demo_steps
+  module: pick_object_control
+  class: PickObjectControl
+
+- name: place_position_selection
+  label: Place Position Selection
+  package: handle_demo_steps
+  module: place_position_selection_control
+  class: PlacePositionSelectionControl
+
+- name: place_object
+  label: Place Object
+  package: handle_demo_steps
+  module: place_object_control
+  class: PlaceObjectControl
+

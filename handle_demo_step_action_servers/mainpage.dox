@@ -1,0 +1,14 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b handle_demo_step_action_servers contains a class for every step in the demo. Every one of this classes contains an actionlib that performs tha job for that step. The Master Controller (MC) will send a goal to the actionlib to trigger that particular step. When the action finishes, the MC will receive the result from that step, and triger the next step.
+
+<!-- 
+Provide an overview of your package.
+-->
+
+-->
+
+
+*/

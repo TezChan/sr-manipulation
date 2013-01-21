@@ -1,0 +1,32 @@
+<package>
+  <description brief="sr_gui_event_sequence">
+
+     sr_gui_event_sequence This GUI plugin loads a user defined list of actions and events from a yaml file. The user can run the sequence, controlling and monitoring the behaviour of every state
+
+  </description>
+  <author>Toni Oliver</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/sr_gui_event_sequence</url>
+  <depend package="rospy"/>
+  <depend package="rqt_gui"/>
+  <depend package="rqt_gui_py"/>
+  <depend package="rostopic"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="tabletop_collision_map_processing"/>
+  <depend package="object_manipulator"/>
+  <depend package="sr_robot_lib"/>
+  <depend package="sr_hand"/>
+  <depend package="actionlib"/>
+  <depend package="control_msgs"/>
+  <depend package="sr_pick_and_place"/>
+  <depend package="handle_demo_step_actions"/>
+
+  <export>
+    <rqt_gui plugin="${prefix}/sr_gui_event_sequence.xml"/>
+  </export>
+
+</package>
+
+

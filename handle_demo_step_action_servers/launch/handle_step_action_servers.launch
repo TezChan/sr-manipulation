@@ -1,0 +1,12 @@
+<launch>
+  <!-- launch actionserver for object_recognition step -->
+  <node pkg="handle_demo_step_action_servers" name="object_recognition_server" type="object_recognition_server.py" output="screen"/>
+  <!-- launch actionserver for object_selection step -->
+  <node pkg="handle_demo_step_action_servers" name="object_selection_server" type="object_selection_server.py" output="screen"/>
+  <!-- launch actionserver for pick_object step -->
+  <node pkg="handle_demo_step_action_servers" name="pick_object_server" type="pick_server.py" output="screen"/>
+  <!-- launch actionserver for select_place_position step -->
+  <node pkg="handle_demo_step_action_servers" name="place_position_selection_server" type="place_position_selection_server.py" output="screen"/>
+  <!-- launch actionserver for place_object step -->
+  <node pkg="handle_demo_step_action_servers" name="place_object_server" type="place_server.py" output="screen"/>
+</launch>

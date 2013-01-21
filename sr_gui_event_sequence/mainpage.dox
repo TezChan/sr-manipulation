@@ -1,0 +1,14 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b sr_gui_event_sequence This GUI plugin loads a user defined list of actions and events from a yaml file. The user can run the sequence, controlling and monitoring the behaviour of every state
+
+<!-- 
+Provide an overview of your package.
+-->
+
+-->
+
+
+*/

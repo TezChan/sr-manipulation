@@ -1,0 +1,27 @@
+<package>
+  <description brief="handle_demo_steps">
+
+     handle_demo_steps This package contains the python files and the ui files that define every step of the handle demo. They will be loaded by the gui plugin defined in the package sr_gui_event_sequence.
+     For a new step to be loaded in the gui plugin, it has to be introduced in the list in sr_gui_event_sequence/config/sequence_config.yaml
+
+  </description>
+  <author>Toni Oliver</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/handle_demo_steps</url>
+  <depend package="rospy"/>
+  <depend package="rostopic"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="tabletop_collision_map_processing"/>
+  <depend package="object_manipulator"/>
+  <depend package="sr_robot_lib"/>
+  <depend package="sr_hand"/>
+  <depend package="actionlib"/>
+  <depend package="control_msgs"/>
+  <depend package="sr_pick_and_place"/>
+  <depend package="sr_gui_event_sequence"/>
+
+</package>
+
+

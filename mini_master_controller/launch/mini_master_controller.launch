@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="mini_master_controller" name="master_controller" type="master_controller.py" output="screen"/>
+</launch>

@@ -1,0 +1,15 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b handle_demo_steps This package contains the python files and the ui files that define every step of the handle demo. They will be loaded by the gui plugin defined in the package sr_gui_event_sequence.
+     For a new step to be loaded in the gui plugin, it has to be introduced in the list in sr_gui_event_sequence/config/sequence_config.yaml
+
+<!-- 
+Provide an overview of your package.
+-->
+
+-->
+
+
+*/
