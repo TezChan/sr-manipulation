@@ -16,7 +16,7 @@
   <depend stack="shadow_robot" /> <!-- sr_hand, sr_robot_msgs -->
   <depend stack="shadow_robot_ethercat" /> <!-- sr_robot_lib -->
   <depend stack="simulator_gazebo" /> <!-- gazebo, gazebo_plugins -->
-  <depend stack="sr_rosgui" /> <!-- rosgui_rospy, rosgui_roscpp, rosgui -->
+  <depend stack="rqt" /> <!-- rosgui_rospy, rosgui_roscpp, rosgui -->
   <depend stack="xacro" /> <!-- xacro -->
 
 </stack>

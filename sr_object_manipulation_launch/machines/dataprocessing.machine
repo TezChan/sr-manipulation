@@ -1,4 +1,4 @@
 <launch>
-  <machine name="dataprocessing" address="localhost" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true" />
+  <machine name="dataprocessing" address="localhost" default="true" />
 </launch>
 
