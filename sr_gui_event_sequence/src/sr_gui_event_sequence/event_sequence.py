@@ -33,7 +33,7 @@ from shadowhand_ros import ShadowHand_ROS
 '''
 
 from qt_gui.plugin import Plugin
-from qt_gui.qt_binding_helper import loadUi
+from python_qt_binding import loadUi
 import QtGui
 from QtCore import QEvent, QObject, Qt, QTimer, Slot, QThread, SIGNAL, QPoint, SIGNAL
 from QtGui import *
@@ -79,20 +79,27 @@ class SrGuiEventSequence(Plugin):
         loadUi(ui_file, self._widget)
         self._widget.setObjectName('SrGuiEventSequenceUi')
         context.add_widget(self._widget)
-        
-        #Step related 
+
+        self.general_info_area_widget = QWidget()
+        ui_file = os.path.join(self.ui_dir, 'GeneralInfoArea.ui')
+        loadUi(ui_file, self.general_info_area_widget)
+        self._widget.general_info_area.addWidget(self.general_info_area_widget)
+
+        #Step related
         self.current_step = None
         #To indicate that the step 0 hasn't been executed yet
         self.first_time = True
         #this list will be filled using the info in the yaml file
         self.step_names_list = []
         self.step_index_dict = {}
-        
+
+        self.on_print_general_info_area_log("General", "Initialising...")
+
         #Dictionary containing the SequenceStep objects for every step in the sequence
         self.sequence_dict = {}
         #Dictionary containing the configuration of the steps read from the yaml file
         self.config_data = None
-        #Read steps configuration from yaml file 
+        #Read steps configuration from yaml file
         yaml_file = os.path.join(self.config_dir, 'sequence_config.yaml')
         try:
             self.config_data = yaml.load(open(yaml_file))
@@ -100,19 +107,24 @@ class SrGuiEventSequence(Plugin):
             QMessageBox.warning(self._widget, "Warning",
                     "Failed to load '"+yaml_file+"': "+str(err))
             raise
-        
+
         #Autorun
         if self._widget.autorun_checkBox.isChecked():
             rospy.set_param('/master_controller/autorun', 1)
         else:
             rospy.set_param('/master_controller/autorun', 0)
-        
+
+        self.on_print_general_info_area_log("General", "Initialising steps")
+
         #Create the Master controller Client
         for (i, step) in enumerate(self.config_data['steps']):
             self.step_names_list.append(step['name'])
             self.step_index_dict[step['name']] = i
-            
+
         self.master_controller_client = MasterControllerClient(self.step_names_list)
+
+        self.on_print_general_info_area_log("General", "Initialising the rest of the GUI")
+
         #connect the signal to notify goal_done (all the steps in the sequence finished somehow)
         self.connect(self.master_controller_client,
                      SIGNAL('goalDone(PyQt_PyObject)'),
@@ -125,9 +137,9 @@ class SrGuiEventSequence(Plugin):
         self.connect(self.master_controller_client,
                      SIGNAL('nextStepSelection()'),
                      self.on_MC_select_next_step)
-        
-        
-        
+
+
+
         #Import and create an object of the class specified in the yaml for every step
         for step in self.config_data['steps']:
             roslib.load_manifest(step['package'])
@@ -144,7 +156,7 @@ class SrGuiEventSequence(Plugin):
             self.connect(self.sequence_dict[step['name']],
                          SIGNAL('startStepPressed(PyQt_PyObject)'),
                          self.on_start_sequence_signal)
-            #connect the signal to tell the MC that this step will be next 
+            #connect the signal to tell the MC that this step will be next
             self.connect(self.sequence_dict[step['name']],
                          SIGNAL('runStepPressed(PyQt_PyObject)'),
                          self.on_run_this_step_signal)
@@ -160,18 +172,13 @@ class SrGuiEventSequence(Plugin):
             self.connect(self,
                          SIGNAL('showStartSequenceButtons(PyQt_PyObject)'),
                          self.sequence_dict[step['name']].on_show_start_btn_signal)
-            
-            
-            
-            
+
+
+
+
         #Add a vertical spacer after the bars, to hold them together in the beginning of the vertical layout
         self._widget.step_list_layout.addStretch(0)
-        
-        self.general_info_area_widget = QWidget()
-        ui_file = os.path.join(self.ui_dir, 'GeneralInfoArea.ui')
-        loadUi(ui_file, self.general_info_area_widget)
-        self._widget.general_info_area.addWidget(self.general_info_area_widget)
-        
+
         #Load info area for the first step (maybe we shouldn't before it's running, but we'll show it for the time being)
         for step in self.config_data['steps']:
             if self.sequence_dict[step['name']].info_area_widget != None:
@@ -179,15 +186,15 @@ class SrGuiEventSequence(Plugin):
                 self.shown_step_widget = self.sequence_dict[self.current_step].info_area_widget
                 self._widget.step_info_area.addWidget(self.shown_step_widget)
                 break
-                
+
 
         # Bind button clicks
         self._widget.btn_start.pressed.connect(self.on_btn_start_pressed)
         self._widget.btn_cancel.pressed.connect(self.on_btn_cancel_pressed)
         self._widget.btn_next.pressed.connect(self.on_btn_next_pressed)
-        #Connect autorun check/uncheck events 
+        #Connect autorun check/uncheck events
         self._widget.autorun_checkBox.stateChanged.connect(self.on_autorun_checkbox_state_changed)
-        
+
         #connect the signal to make the next (run) button visible
         self.connect(self,
                      SIGNAL('showRunStepButtons(PyQt_PyObject)'),
@@ -196,9 +203,10 @@ class SrGuiEventSequence(Plugin):
         self.connect(self,
                      SIGNAL('showStartSequenceButtons(PyQt_PyObject)'),
                      self.on_show_start_btn_signal)
-        
+
         #We'll emit a signal to hide all the buttons to choose the next step
         self.emit(SIGNAL('showRunStepButtons(PyQt_PyObject)'), False)
+        self.on_print_general_info_area_log("General", "OK - ready.")
 
     def on_show_state_changed(self, state, step_name):
         if state == Qt.Checked:
@@ -229,27 +237,27 @@ class SrGuiEventSequence(Plugin):
         self.master_controller_client.on_start_step_signal(step_name)
         #We'll emit a signal to hide all the buttons to start sequence
         self.emit(SIGNAL('showStartSequenceButtons(PyQt_PyObject)'), False)
-    
+
     def on_run_this_step_signal(self, step_name):
         self.master_controller_client.next_step_selected = step_name
         #We'll emit a signal to hide all the buttons to choose the next step
         self.emit(SIGNAL('showRunStepButtons(PyQt_PyObject)'), False)
-    
+
     def on_MC_goal_done(self, msg):
         #Show some info in the general info area
         self.general_info_area_widget.log_area_TextEdit.appendHtml("<font color=\"red\">" + msg + "</font>")
         #We'll emit a signal to show all the buttons to start sequence
         self.emit(SIGNAL('showStartSequenceButtons(PyQt_PyObject)'), True)
         self.first_time = True
-    
+
     def on_MC_current_step_received(self, step_name):
         #Show some info in the general info area
         self.general_info_area_widget.log_area_TextEdit.appendHtml("<font color=\"red\">" + "MC Current step is: " + step_name + "</font>")
         #This affects the behaviour of the "next" button
         self.first_time = False
-        
+
         self.current_step = step_name
-        
+
         #Show the step info area for the current step (by unchecking all of them)
         self.sequence_dict[step_name].info_bar_widget.show_checkBox.setChecked(True)
         for step in self.sequence_dict.keys():
@@ -259,20 +267,20 @@ class SrGuiEventSequence(Plugin):
     def on_MC_select_next_step(self):
         #We'll emit a signal to show all the buttons to choose the next step
         self.emit(SIGNAL('showRunStepButtons(PyQt_PyObject)'), True)
-        
+
     def on_show_next_btn_signal(self, state):
         self._widget.btn_next.setEnabled(state)
-        
+
     def on_show_start_btn_signal(self, state):
         self._widget.btn_start.setEnabled(state)
-        
+
     def on_btn_start_pressed(self):
         #If the Start button is pressed we send the first (index = 0) step to the MC
         self.on_start_sequence_signal(self.step_names_list[0])
-        
+
     def on_btn_cancel_pressed(self):
         self.master_controller_client.on_cancel_button_pressed()
-        
+
     def on_btn_next_pressed(self):
         next_step_index = None
         if self.first_time:
@@ -285,17 +293,17 @@ class SrGuiEventSequence(Plugin):
         else:
             next_step_name = self.step_names_list[next_step_index]
         self.on_run_this_step_signal(next_step_name)
-        
-    def on_print_general_info_area_log(self, step_name, log_msg):        
+
+    def on_print_general_info_area_log(self, step_name, log_msg):
         #Show some info in the general info area
         self.general_info_area_widget.log_area_TextEdit.appendPlainText(step_name + ": " + log_msg)
-        
+
     def on_autorun_checkbox_state_changed(self, state):
         if state == Qt.Checked:
             rospy.set_param('/master_controller/autorun', 1)
         else:
             rospy.set_param('/master_controller/autorun', 0)
-        
+
     def eventFilter(self, obj, event):
         if obj is self._widget and event.type() == QEvent.Close:
             # TODO: ignore() should not be necessary when returning True
