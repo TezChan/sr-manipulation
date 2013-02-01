@@ -16,6 +16,8 @@
     <node pkg="sr_utilities" type="get_joint_states.py" name="get_joint_states"/>
     <!-- relay the service from sr_controller manager to pr2_controller_manager -->
     <node pkg="sr_controller_manager" name="sr_controller_manager" type="sr_controller_manager.py" args="pr2_controller_manager"/>
+
+    <include file="$(find sr_hand)/launch/sr_arm_and_hand.launch"/>
   </group>
 
 	<!--
