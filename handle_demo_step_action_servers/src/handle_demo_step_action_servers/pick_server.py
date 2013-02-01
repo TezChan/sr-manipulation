@@ -36,14 +36,14 @@ from sr_pick_and_place.execution import Execution
 class PickServer(object):
     def __init__(self):
         self.draw_functions = draw_functions.DrawFunctions('grasp_markers')
-        
+
         self.pickupservice = Execution()
         self.object = None
         self.object_name = None
         self.server = actionlib.SimpleActionServer('pick_object', PickObjectAction, self.execute, False)
         self.server.start()
         loginfo("Step actionlib servers: pick server ready")
-    
+
     def execute(self, goal):
         (res, initial_pose, executed_grasp) = self.pick_object(goal.object_to_pick, goal.collision_support_surface_name)
         if self.server.is_active():
@@ -54,7 +54,7 @@ class PickServer(object):
                 rospy.logwarn("Pickup failed")
                 self.server.publish_feedback(PickObjectFeedback(100, "Error: Pickup failed"))
                 self.server.set_succeeded(PickObjectResult(res, initial_pose, executed_grasp))
-        
+
     def pick_object(self, object_to_pick, collision_support_surface_name):
         self.server.publish_feedback(PickObjectFeedback(1, "Finding object bounding box"))
         self.object_name = object_to_pick.model_description.name
@@ -85,7 +85,7 @@ class PickServer(object):
         self.server.publish_feedback(PickObjectFeedback(10, "Calling pick up service"))
         # call the pickup service
         res = self.pickup(graspable_object, self.object.graspable_object_name, self.object_name, collision_support_surface_name)
-        
+
         initial_pose = PoseStamped()
         initial_pose.header.stamp = rospy.get_rostime()
         initial_pose.header.frame_id = "/world"
@@ -93,18 +93,18 @@ class PickServer(object):
         initial_pose.pose.position.y = self.box_pose.pose.position.y
         initial_pose.pose.position.z = self.box_pose.pose.position.z-box_dims.z/2 # graspable object is from bottom but bounding box is at center !
 
-        initial_pose.pose.orientation.x = self.box_pose.pose.orientation.x 
+        initial_pose.pose.orientation.x = self.box_pose.pose.orientation.x
         initial_pose.pose.orientation.y = self.box_pose.pose.orientation.y
         initial_pose.pose.orientation.z = self.box_pose.pose.orientation.z
         initial_pose.pose.orientation.w = self.box_pose.pose.orientation.w
-        
+
         if res == 0: #correctly picked up
             executed_grasp = self.pickup_result.grasp
         else:
             executed_grasp = Grasp()
-            
+
         return (res, initial_pose, executed_grasp)
-    
+
     def pickup(self, graspable_object, graspable_object_name, object_name, collision_support_surface_name):
         """
         Try to pick up the given object. Sends a message (PickupGoal from
@@ -133,7 +133,7 @@ class PickServer(object):
         direction.vector.z = 1;
         pickup_goal.lift.direction = direction;
         #request a vertical lift of 15cm after grasping the object
-        pickup_goal.lift.desired_distance = 0.1;
+        pickup_goal.lift.desired_distance = 0.2;
         pickup_goal.lift.min_distance = 0.07;
         #do not use tactile-based grasping or tactile-based lift
         pickup_goal.use_reactive_lift = True;
