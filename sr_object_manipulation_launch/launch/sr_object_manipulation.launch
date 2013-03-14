@@ -1,7 +1,7 @@
 <launch>
-  <group if="$(optenv SIMULATED 0)">
+<!--  <group if="$(optenv SIMULATED 0)">
     <include file="$(find sr_worlds)/launch/can.launch"/>
-  </group>
+  </group> -->
 
   <!-- specifies the machines on which the nodes will be run -->
   <include file="$(find sr_object_manipulation_launch)/machines/threedsensor.machine"/>
