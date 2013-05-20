@@ -19,7 +19,7 @@
 
   <group unless="$(optenv SIMULATED 0)">
     <!-- Sets the position of the kinect in comparison to the robot when NOT simulated -->
-    <include file="$(find sr_object_manipulation_launch)/launch/kinect_static_transform.launch"/>
+    <!-- include file="$(find sr_object_manipulation_launch)/launch/kinect_static_transform.launch"/ -->
     <include file="$(find sr_object_manipulation_launch)/launch/kinect_setup.launch"/>
   </group>
 
